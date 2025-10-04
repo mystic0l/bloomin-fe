@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, Package } from 'lucide-react';
 
 export const Orders = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { orders, currentCustomer, user, shops } = useStore();
 
@@ -32,7 +32,7 @@ export const Orders = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => navigate('/customer/shops')}
+        onClick={() => router.push('/customer/shops')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft className="w-5 h-5" />
@@ -51,7 +51,7 @@ export const Orders = () => {
                 : 'No orders yet'}
             </p>
             <button
-              onClick={() => navigate('/customer/shops')}
+              onClick={() => router.push('/customer/shops')}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               {t('customer.browseShops')}

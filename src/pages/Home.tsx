@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from '../hooks/useTranslation';
 import { Store, ShoppingBag, Truck, QrCode, Bell, Smartphone } from 'lucide-react';
 
 export const Home = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
 
   return (
@@ -22,7 +22,7 @@ export const Home = () => {
 
         <div className="flex flex-col sm:flex-row gap-6 justify-center">
           <button
-            onClick={() => navigate('/auth?role=shopkeeper')}
+            onClick={() => router.push('/auth?role=shopkeeper')}
             className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transform hover:scale-105 transition-all shadow-lg"
           >
             <Store className="w-6 h-6" />
@@ -30,7 +30,7 @@ export const Home = () => {
           </button>
 
           <button
-            onClick={() => navigate('/auth?role=customer')}
+            onClick={() => router.push('/auth?role=customer')}
             className="flex items-center justify-center gap-3 px-8 py-4 bg-green-600 text-white rounded-xl font-semibold text-lg hover:bg-green-700 transform hover:scale-105 transition-all shadow-lg"
           >
             <ShoppingBag className="w-6 h-6" />

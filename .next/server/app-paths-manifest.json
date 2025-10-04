@@ -1,0 +1,7 @@
+{
+  "/shopkeeper/setup/page": "app/shopkeeper/setup/page.js",
+  "/shopkeeper/dashboard/page": "app/shopkeeper/dashboard/page.js",
+  "/shopkeeper/products/page": "app/shopkeeper/products/page.js",
+  "/shop/[shopId]/page": "app/shop/[shopId]/page.js",
+  "/customer/shops/page": "app/customer/shops/page.js"
+}

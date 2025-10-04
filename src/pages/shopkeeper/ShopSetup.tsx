@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Shop } from '../../types';
@@ -16,7 +16,7 @@ const SHOP_TYPES = [
 ];
 
 export const ShopSetup = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { user, addShop } = useStore();
 
@@ -50,7 +50,7 @@ export const ShopSetup = () => {
     };
 
     addShop(shop);
-    navigate('/shopkeeper/dashboard');
+    router.push('/shopkeeper/dashboard');
   };
 
   return (

@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Product } from '../../types';
 import { Plus, Trash2, CreditCard as Edit2, ArrowLeft } from 'lucide-react';
 
 export const ProductManagement = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { currentShop, products, addProduct, updateProduct, deleteProduct } = useStore();
   const [showForm, setShowForm] = useState(false);
@@ -21,7 +21,7 @@ export const ProductManagement = () => {
   });
 
   if (!currentShop) {
-    navigate('/shopkeeper/setup');
+    router.push('/shopkeeper/setup');
     return null;
   }
 
@@ -83,7 +83,7 @@ export const ProductManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => navigate('/shopkeeper/dashboard')}
+          onClick={() => router.push('/shopkeeper/dashboard')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5" />

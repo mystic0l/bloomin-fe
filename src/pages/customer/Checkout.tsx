@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Order, OrderItem } from '../../types';
 
 export const Checkout = () => {
-  const { shopId } = useParams<{ shopId: string }>();
-  const navigate = useNavigate();
+  const params = useParams();
+  const shopId = params?.shopId as string;
+  const router = useRouter();
   const { t } = useTranslation();
   const { user, cart, shops, currentCustomer, addOrder, clearCart } = useStore();
 
@@ -22,7 +24,7 @@ export const Checkout = () => {
   const [orderId, setOrderId] = useState('');
 
   if (!shopId) {
-    navigate('/customer/shops');
+    router.push('/customer/shops');
     return null;
   }
 
@@ -30,7 +32,7 @@ export const Checkout = () => {
   const shopCartItems = cart.filter((item) => item.product.shopId === shopId);
 
   if (!shop || shopCartItems.length === 0) {
-    navigate('/customer/cart');
+    router.push('/customer/cart');
     return null;
   }
 
@@ -43,7 +45,7 @@ export const Checkout = () => {
     e.preventDefault();
 
     if (!user) {
-      navigate('/auth?role=customer');
+      router.push('/auth?role=customer');
       return;
     }
 
@@ -109,13 +111,13 @@ export const Checkout = () => {
           </p>
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => navigate('/customer/orders')}
+              onClick={() => router.push('/customer/orders')}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               {t('order.myOrders')}
             </button>
             <button
-              onClick={() => navigate('/customer/shops')}
+              onClick={() => router.push('/customer/shops')}
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
             >
               {t('customer.browseShops')}
@@ -132,7 +134,7 @@ export const Checkout = () => {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => navigate('/customer/cart')}
+        onClick={() => router.push('/customer/cart')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft className="w-5 h-5" />

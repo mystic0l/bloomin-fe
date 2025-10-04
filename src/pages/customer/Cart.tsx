@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
 
 export const Cart = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { cart, shops, removeFromCart, updateCartQuantity, user } = useStore();
   const [checkoutShopId, setCheckoutShopId] = useState<string | null>(null);
@@ -14,7 +14,7 @@ export const Cart = () => {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => navigate('/customer/shops')}
+          onClick={() => router.push('/customer/shops')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -30,7 +30,7 @@ export const Cart = () => {
               : 'Browse shops to start shopping'}
           </p>
           <button
-            onClick={() => navigate('/customer/shops')}
+            onClick={() => router.push('/customer/shops')}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             {t('customer.browseShops')}
@@ -55,17 +55,17 @@ export const Cart = () => {
 
   const handleCheckout = (shopId: string) => {
     if (!user) {
-      navigate('/auth?role=customer');
+      router.push('/auth?role=customer');
       return;
     }
     setCheckoutShopId(shopId);
-    navigate(`/customer/checkout/${shopId}`);
+    router.push(`/customer/checkout/${shopId}`);
   };
 
   return (
     <div className="space-y-6">
       <button
-        onClick={() => navigate('/customer/shops')}
+        onClick={() => router.push('/customer/shops')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
       >
         <ArrowLeft className="w-5 h-5" />

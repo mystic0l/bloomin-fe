@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Search, Store, MapPin, Truck, ShoppingBag } from 'lucide-react';
 
 export const ShopList = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { shops } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +72,7 @@ export const ShopList = () => {
         {filteredShops.map((shop) => (
           <div
             key={shop.id}
-            onClick={() => navigate(`/shop/${shop.id}`)}
+            onClick={() => router.push(`/shop/${shop.id}`)}
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all cursor-pointer overflow-hidden transform hover:scale-105"
           >
             <div className="p-6">

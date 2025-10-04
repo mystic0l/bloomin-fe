@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { Product } from '../../types';
 
 export const ShopView = () => {
-  const { shopId } = useParams<{ shopId: string }>();
-  const navigate = useNavigate();
+  const params = useParams();
+  const shopId = params?.shopId as string;
+  const router = useRouter();
   const { t } = useTranslation();
   const { shops, products, cart, addToCart } = useStore();
 
@@ -44,7 +46,7 @@ export const ShopView = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <button
-          onClick={() => navigate('/customer/shops')}
+          onClick={() => router.push('/customer/shops')}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -53,7 +55,7 @@ export const ShopView = () => {
 
         {cartItemCount > 0 && (
           <button
-            onClick={() => navigate('/customer/cart')}
+            onClick={() => router.push('/customer/cart')}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <ShoppingCart className="w-5 h-5" />

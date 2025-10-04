@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Package, ShoppingCart, QrCode, Settings, Plus } from 'lucide-react';
@@ -7,7 +7,7 @@ import { generateQRCode, downloadQRCode } from '../../utils/qrcode';
 import { showNotification, requestNotificationPermission } from '../../utils/notifications';
 
 export const Dashboard = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { t } = useTranslation();
   const { currentShop, products, orders } = useStore();
   const [qrCode, setQrCode] = useState<string>('');
@@ -15,7 +15,7 @@ export const Dashboard = () => {
 
   useEffect(() => {
     if (!currentShop) {
-      navigate('/shopkeeper/setup');
+      router.push('/shopkeeper/setup');
       return;
     }
 
@@ -23,7 +23,7 @@ export const Dashboard = () => {
 
     const storefrontUrl = `${window.location.origin}/shop/${currentShop.id}`;
     generateQRCode(storefrontUrl).then(setQrCode);
-  }, [currentShop, navigate]);
+  }, [currentShop, router]);
 
   useEffect(() => {
     const latestOrder = orders[orders.length - 1];
@@ -64,7 +64,7 @@ export const Dashboard = () => {
             </div>
           </div>
           <button
-            onClick={() => navigate('/shopkeeper/settings')}
+            onClick={() => router.push('/shopkeeper/settings')}
             className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
             <Settings className="w-5 h-5" />
@@ -140,7 +140,7 @@ export const Dashboard = () => {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">{t('product.manage')}</h2>
                 <button
-                  onClick={() => navigate('/shopkeeper/products')}
+                  onClick={() => router.push('/shopkeeper/products')}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Plus className="w-5 h-5" />

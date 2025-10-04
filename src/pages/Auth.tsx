@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useStore } from '../store';
 import { useTranslation } from '../hooks/useTranslation';
 import { Store, ShoppingBag } from 'lucide-react';
 
 export const Auth = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { t } = useTranslation();
   const { setUser, setUserRole } = useStore();
 
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<'shopkeeper' | 'customer'>(
-    (searchParams.get('role') as 'shopkeeper' | 'customer') || 'customer'
+    (searchParams?.get('role') as 'shopkeeper' | 'customer') || 'customer'
   );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
 
   useEffect(() => {
-    const roleParam = searchParams.get('role');
+    const roleParam = searchParams?.get('role');
     if (roleParam === 'shopkeeper' || roleParam === 'customer') {
       setRole(roleParam);
     }
@@ -33,9 +33,9 @@ export const Auth = () => {
     setUserRole(role);
 
     if (role === 'shopkeeper') {
-      navigate('/shopkeeper/setup');
+      router.push('/shopkeeper/setup');
     } else {
-      navigate('/customer/shops');
+      router.push('/customer/shops');
     }
   };
 

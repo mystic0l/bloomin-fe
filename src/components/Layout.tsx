@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useStore } from '../store';
 import { useTranslation } from '../hooks/useTranslation';
 import { Store, User, LogOut, ShoppingBag, Globe } from 'lucide-react';
@@ -9,13 +9,13 @@ interface LayoutProps {
 }
 
 export const Layout = ({ children }: LayoutProps) => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user, userRole, language, setLanguage, logout } = useStore();
   const { t } = useTranslation();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    router.push('/');
   };
 
   const toggleLanguage = () => {
@@ -29,7 +29,7 @@ export const Layout = ({ children }: LayoutProps) => {
           <div className="flex justify-between items-center h-16">
             <div
               className="flex items-center gap-2 cursor-pointer"
-              onClick={() => navigate('/')}
+              onClick={() => router.push('/')}
             >
               <Store className="w-8 h-8 text-blue-600" />
               <span className="text-xl font-bold text-gray-900">
@@ -52,7 +52,7 @@ export const Layout = ({ children }: LayoutProps) => {
                 <>
                   {userRole === 'shopkeeper' && (
                     <button
-                      onClick={() => navigate('/shopkeeper/dashboard')}
+                      onClick={() => router.push('/shopkeeper/dashboard')}
                       className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
                     >
                       <Store className="w-5 h-5" />
@@ -63,14 +63,14 @@ export const Layout = ({ children }: LayoutProps) => {
                   {userRole === 'customer' && (
                     <>
                       <button
-                        onClick={() => navigate('/customer/shops')}
+                        onClick={() => router.push('/customer/shops')}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <ShoppingBag className="w-5 h-5" />
                         <span className="font-medium">{t('customer.browseShops')}</span>
                       </button>
                       <button
-                        onClick={() => navigate('/customer/orders')}
+                        onClick={() => router.push('/customer/orders')}
                         className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                       >
                         <User className="w-5 h-5" />
