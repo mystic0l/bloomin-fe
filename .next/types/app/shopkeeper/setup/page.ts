@@ -1,4 +1,4 @@
-// File: C:\Users\vaibh\bloomin-fe\app\shopkeeper\setup\page.tsx
+// File: E:\projects\bloomin-fe\app\shopkeeper\setup\page.tsx
 import * as entry from '../../../../../app/shopkeeper/setup/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

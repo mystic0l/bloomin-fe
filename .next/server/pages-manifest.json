@@ -1,1 +1,15 @@
-{}
+{
+  "/Home": "pages/Home.js",
+  "/customer/Cart": "pages/customer/Cart.js",
+  "/customer/Orders": "pages/customer/Orders.js",
+  "/Auth": "pages/Auth.js",
+  "/customer/Checkout": "pages/customer/Checkout.js",
+  "/customer/ShopList": "pages/customer/ShopList.js",
+  "/shopkeeper/Dashboard": "pages/shopkeeper/Dashboard.js",
+  "/customer/ShopView": "pages/customer/ShopView.js",
+  "/_error": "pages/_error.js",
+  "/_app": "pages/_app.js",
+  "/shopkeeper/ShopSetup": "pages/shopkeeper/ShopSetup.js",
+  "/shopkeeper/ProductManagement": "pages/shopkeeper/ProductManagement.js",
+  "/_document": "pages/_document.js"
+}
