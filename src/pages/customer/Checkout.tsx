@@ -1,4 +1,6 @@
-import { useState } from 'react';
+"use client";
+
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
@@ -6,7 +8,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
 import { Order, OrderItem } from '../../types';
 
-export const Checkout = () => {
+ const Checkout = () => {
   const params = useParams();
   const shopId = params?.shopId as string;
   const router = useRouter();
@@ -22,33 +24,32 @@ export const Checkout = () => {
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
-
-  if (!shopId) {
-    router.push('/customer/shops');
-    return null;
-  }
+  const [redirect, setRedirect] = useState<null | string>(null); // new redirect state
 
   const shop = shops.find((s) => s.id === shopId);
   const shopCartItems = cart.filter((item) => item.product.shopId === shopId);
-
-  if (!shop || shopCartItems.length === 0) {
-    router.push('/customer/cart');
-    return null;
-  }
-
   const total = shopCartItems.reduce(
     (sum, item) => sum + item.product.price * item.quantity,
     0
   );
 
+  // ✅ useEffect for redirects
+  useEffect(() => {
+    if (!shopId) setRedirect("/customer/shops");
+    else if (!shop || shopCartItems.length === 0) setRedirect("/customer/cart");
+
+    if (redirect) {
+      router.push(redirect);
+    }
+  }, [shopId, shop, shopCartItems.length, redirect, router]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) {
-      router.push('/auth?role=customer');
+      setRedirect("/auth?role=customer");
       return;
     }
-
     const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
     const orderItems: OrderItem[] = shopCartItems.map((item) => ({
@@ -86,6 +87,9 @@ export const Checkout = () => {
     setOrderId(orderNumber);
     setOrderPlaced(true);
   };
+
+ if (redirect) return null;
+
 
   if (orderPlaced) {
     return (
@@ -128,8 +132,8 @@ export const Checkout = () => {
     );
   }
 
-  const showPaymentOptions = shop.serviceType === 'delivery';
-  const showUpiOption = showPaymentOptions && (shop.upiId || shop.upiQrUrl);
+  const showPaymentOptions = shop?.serviceType === 'delivery';
+  const showUpiOption = showPaymentOptions && (shop?.upiId || shop?.upiQrUrl);
 
   return (
     <div className="space-y-6">
@@ -184,7 +188,7 @@ export const Checkout = () => {
                   rows={3}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder={
-                    shop.serviceType === 'delivery'
+                    shop?.serviceType === 'delivery'
                       ? t('common.language') === 'hindi'
                         ? 'डिलीवरी पता'
                         : 'Delivery address'
@@ -298,3 +302,4 @@ export const Checkout = () => {
     </div>
   );
 };
+export default Checkout;

@@ -4,7 +4,7 @@ import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Search, Store, MapPin, Truck, ShoppingBag } from 'lucide-react';
 
-export const ShopList = () => {
+ const ShopList = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { shops } = useStore();
@@ -132,3 +132,4 @@ export const ShopList = () => {
     </div>
   );
 };
+export default ShopList;

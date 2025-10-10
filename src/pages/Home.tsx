@@ -2,7 +2,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '../hooks/useTranslation';
 import { Store, ShoppingBag, Truck, QrCode, Bell, Smartphone } from 'lucide-react';
 
-export const Home = () => {
+ const Home = () => {
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -105,3 +105,5 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => (
     <p className="text-gray-600">{description}</p>
   </div>
 );
+
+export default Home;

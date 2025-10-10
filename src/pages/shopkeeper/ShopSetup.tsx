@@ -15,7 +15,7 @@ const SHOP_TYPES = [
   'stationery',
 ];
 
-export const ShopSetup = () => {
+ const ShopSetup = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, addShop } = useStore();
@@ -212,3 +212,5 @@ export const ShopSetup = () => {
     </div>
   );
 };
+
+export default ShopSetup;

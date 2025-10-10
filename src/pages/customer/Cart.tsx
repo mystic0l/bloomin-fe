@@ -4,7 +4,7 @@ import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
 
-export const Cart = () => {
+ const Cart = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { cart, shops, removeFromCart, updateCartQuantity, user } = useStore();
@@ -154,3 +154,4 @@ export const Cart = () => {
     </div>
   );
 };
+export default Cart;

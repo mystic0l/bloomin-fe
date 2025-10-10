@@ -6,7 +6,7 @@ import { Package, ShoppingCart, QrCode, Settings, Plus } from 'lucide-react';
 import { generateQRCode, downloadQRCode } from '../../utils/qrcode';
 import { showNotification, requestNotificationPermission } from '../../utils/notifications';
 
-export const Dashboard = () => {
+ const Dashboard = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { currentShop, products, orders } = useStore();
@@ -302,3 +302,5 @@ const OrdersTab = ({ orders }: { orders: any[] }) => {
     </div>
   );
 };
+
+export default Dashboard;

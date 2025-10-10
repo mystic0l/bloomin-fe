@@ -3,7 +3,7 @@ import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, Package } from 'lucide-react';
 
-export const Orders = () => {
+ const Orders = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { orders, currentCustomer, user, shops } = useStore();
@@ -177,3 +177,5 @@ export const Orders = () => {
     </div>
   );
 };
+
+export default Orders;

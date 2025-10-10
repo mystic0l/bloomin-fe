@@ -1,7 +1,7 @@
 'use client'
 
 import { Layout } from '@/components/Layout'
-import { Checkout } from '@/pages/customer/Checkout'
+import  Checkout  from '@/pages/customer/Checkout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 export default function CheckoutPage() {

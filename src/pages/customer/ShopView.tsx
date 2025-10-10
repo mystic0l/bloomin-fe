@@ -6,7 +6,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { Product } from '../../types';
 
-export const ShopView = () => {
+ const ShopView = () => {
   const params = useParams();
   const shopId = params?.shopId as string;
   const router = useRouter();
@@ -181,3 +181,4 @@ export const ShopView = () => {
     </div>
   );
 };
+export default ShopView;

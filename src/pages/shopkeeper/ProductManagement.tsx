@@ -1,11 +1,14 @@
+"use client";
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Product } from '../../types';
 import { Plus, Trash2, CreditCard as Edit2, ArrowLeft } from 'lucide-react';
 
-export const ProductManagement = () => {
+ const ProductManagement = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { currentShop, products, addProduct, updateProduct, deleteProduct } = useStore();
@@ -20,12 +23,16 @@ export const ProductManagement = () => {
     imageUrl: '',
   });
 
+useEffect(() => {
   if (!currentShop) {
-    router.push('/shopkeeper/setup');
-    return null;
+    router.push("/shopkeeper/setup");
   }
+}, [currentShop, router]);
 
-  const shopProducts = products.filter((p) => p.shopId === currentShop.id);
+
+  const shopProducts = currentShop
+    ? products.filter((p) => p.shopId === currentShop.id)
+    : [];
 
   const resetForm = () => {
     setFormData({ name: '', flavor: '', price: '', quantity: '', imageUrl: '' });
@@ -57,6 +64,10 @@ export const ProductManagement = () => {
         imageUrl: formData.imageUrl || undefined,
       });
     } else {
+      if (!currentShop) {
+        // Optionally show an error or return early
+        return;
+      }
       const product: Product = {
         id: Math.random().toString(36).substring(7),
         shopId: currentShop.id,
@@ -271,3 +282,5 @@ export const ProductManagement = () => {
     </div>
   );
 };
+
+export default ProductManagement;

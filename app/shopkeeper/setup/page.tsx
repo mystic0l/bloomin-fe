@@ -1,7 +1,7 @@
 'use client'
 
 import { Layout } from '@/components/Layout'
-import { ShopSetup } from '@/pages/shopkeeper/ShopSetup'
+import ShopSetup  from '@/pages/shopkeeper/ShopSetup'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 
 export default function ShopSetupPage() {

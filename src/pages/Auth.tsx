@@ -1,10 +1,12 @@
+"use client"; 
+
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useStore } from '../store';
 import { useTranslation } from '../hooks/useTranslation';
 import { Store, ShoppingBag } from 'lucide-react';
 
-export const Auth = () => {
+ const Auth = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { t } = useTranslation();
@@ -14,6 +16,8 @@ export const Auth = () => {
   const [role, setRole] = useState<'shopkeeper' | 'customer'>(
     (searchParams?.get('role') as 'shopkeeper' | 'customer') || 'customer'
   );
+   const [redirect, setRedirect] = useState(false);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
@@ -25,19 +29,27 @@ export const Auth = () => {
     }
   }, [searchParams]);
 
+
+    useEffect(() => {
+    if (redirect) {
+      if (role === "shopkeeper") {
+        router.push("/shopkeeper/setup");
+      } else {
+        router.push("/customer/shops");
+      }
+    }
+  }, [redirect, role, router]);
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const userId = Math.random().toString(36).substring(7);
-    setUser({ id: userId, email });
+    setUser({ id: userId, email: "example@example.com" });
     setUserRole(role);
-
-    if (role === 'shopkeeper') {
-      router.push('/shopkeeper/setup');
-    } else {
-      router.push('/customer/shops');
-    }
-  };
+  
+    setRedirect(true);
+  }; // <-- Add this closing brace for handleSubmit
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center px-4">
@@ -150,3 +162,5 @@ export const Auth = () => {
     </div>
   );
 };
+
+export default Auth;
