@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { signOut } from 'firebase/auth';
 import { Shop, Product, Order, Customer, CartItem, UserRole } from '../types';
+import { auth } from '../lib/firebase';
+import { clearStoredUser } from '../utils/userStorage';
 
 interface AppState {
   user: { id: string; email: string } | null;
@@ -18,6 +21,7 @@ interface AppState {
   setLanguage: (lang: 'english' | 'hindi') => void;
   setCurrentShop: (shop: Shop | null) => void;
   setCurrentCustomer: (customer: Customer | null) => void;
+  syncUserContext: () => void;
 
   addToCart: (product: Product, quantity: number) => void;
   removeFromCart: (productId: string) => void;
@@ -39,7 +43,7 @@ interface AppState {
 
 export const useStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       userRole: null,
       language: 'english',
@@ -51,10 +55,42 @@ export const useStore = create<AppState>()(
       orders: [],
 
       setUser: (user) => set({ user }),
-      setUserRole: (role) => set({ userRole: role }),
+      setUserRole: (role) => {
+        set({ userRole: role });
+        get().syncUserContext();
+      },
       setLanguage: (lang) => set({ language: lang }),
       setCurrentShop: (shop) => set({ currentShop: shop }),
       setCurrentCustomer: (customer) => set({ currentCustomer: customer }),
+
+      syncUserContext: () => {
+        const state = get();
+
+        if (state.userRole === 'shopkeeper' && state.user) {
+          const ownedShop = state.shops.find((shop) => shop.userId === state.user!.id) ?? null;
+
+          if (
+            ownedShop &&
+            state.currentShop &&
+            state.currentShop.id === ownedShop.id &&
+            state.currentShop.userId === state.user.id
+          ) {
+            // already synced
+          } else {
+            set({ currentShop: ownedShop });
+          }
+        } else if (state.currentShop) {
+          set({ currentShop: null });
+        }
+
+        if (state.userRole === 'customer' && state.user) {
+          if (state.currentCustomer?.userId !== state.user.id) {
+            set({ currentCustomer: null });
+          }
+        } else if (state.currentCustomer) {
+          set({ currentCustomer: null });
+        }
+      },
 
       addToCart: (product, quantity) => set((state) => {
         const existing = state.cart.find(item => item.product.id === product.id);
@@ -120,13 +156,21 @@ export const useStore = create<AppState>()(
         )
       })),
 
-      logout: () => set({
-        user: null,
-        userRole: null,
-        currentShop: null,
-        currentCustomer: null,
-        cart: []
-      })
+      logout: () => {
+        const currentUid = get().user?.id ?? auth.currentUser?.uid ?? null;
+        clearStoredUser(currentUid);
+        signOut(auth).catch((error) => {
+          console.warn('Failed to sign out from Firebase', error);
+        });
+
+        set({
+          user: null,
+          userRole: null,
+          currentShop: null,
+          currentCustomer: null,
+          cart: []
+        });
+      }
     }),
     {
       name: 'business-digitalizer-storage',
