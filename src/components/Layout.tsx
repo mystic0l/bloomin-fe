@@ -33,7 +33,7 @@ export const Layout = ({ children }: LayoutProps) => {
             >
               <Store className="w-8 h-8 text-blue-600" />
               <span className="text-xl font-bold text-gray-900">
-                Business Digitalizer
+                BloomIn
               </span>
             </div>
 

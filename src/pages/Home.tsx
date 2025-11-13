@@ -12,7 +12,7 @@ import { Store, ShoppingBag, Truck, QrCode, Bell, Smartphone } from 'lucide-reac
         <h1 className="text-5xl font-bold text-gray-900 mb-6">
           {t('common.language') === 'hindi'
             ? 'अपने व्यवसाय को डिजिटल बनाएं'
-            : 'Digitalize Your Business'}
+            : 'Digitise Your Business'}
         </h1>
         <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
           {t('common.language') === 'hindi'
