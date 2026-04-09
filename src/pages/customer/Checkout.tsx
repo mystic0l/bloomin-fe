@@ -43,7 +43,7 @@ import { Order, OrderItem } from '../../types';
     }
   }, [shopId, shop, shopCartItems.length, redirect, router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) {
@@ -78,11 +78,34 @@ import { Order, OrderItem } from '../../types';
       updatedAt: new Date().toISOString(),
     };
 
-    addOrder(order);
 
-    shopCartItems.forEach((item) => {
+    try {
+      const response = await fetch("http://localhost:5000/api/orders/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer_name: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          total_amount: total,
+          items: shopCartItems.map(item => ({
+            product_name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.price,
+            subtotal: item.product.price * item.quantity
+          }))
+        })
+      });
+    
+      const data = await response.json();
+      console.log("Saved to backend:", data);
+    } catch (error) {
+      console.error("Backend error:", error);
+    }
+
       clearCart();
-    });
 
     setOrderId(orderNumber);
     setOrderPlaced(true);
