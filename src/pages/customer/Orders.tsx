@@ -59,6 +59,13 @@ const Orders = () => {
                 className="border border-gray-200 rounded-xl p-6"
               >
                 <p className="font-bold text-lg">{order.customer_name}</p>
+                <div className="mt-2">
+  {order.items?.map((item: any, index: number) => (
+    <p key={index} className="text-sm text-gray-600">
+      {item.product_name} × {item.quantity}
+    </p>
+  ))}
+</div>
                 <p className="text-sm text-gray-600">{order.address}</p>
                 <p className="text-sm text-gray-600">₹{order.total_amount}</p>
                 <p className="text-sm text-blue-600">{order.status}</p>

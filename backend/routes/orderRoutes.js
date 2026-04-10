@@ -37,10 +37,39 @@ router.post("/create", async (req, res) => {
 
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query(
+    const ordersResult = await pool.query(
       "SELECT * FROM orders ORDER BY created_at DESC"
     );
-    res.json(result.rows);
+
+    const orders = ordersResult.rows;
+
+    for (let order of orders) {
+      const itemsResult = await pool.query(
+        "SELECT * FROM order_items WHERE order_id = $1",
+        [order.id]
+      );
+
+      order.items = itemsResult.rows;
+    }
+
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.put("/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const result = await pool.query(
+      "UPDATE orders SET status = $1 WHERE id = $2 RETURNING *",
+      [status, id]
+    );
+
+    res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

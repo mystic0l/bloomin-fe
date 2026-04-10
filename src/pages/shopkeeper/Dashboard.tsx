@@ -6,12 +6,41 @@ import { Package, ShoppingCart, QrCode, Settings, Plus } from 'lucide-react';
 import { generateQRCode, downloadQRCode } from '../../utils/qrcode';
 import { showNotification, requestNotificationPermission } from '../../utils/notifications';
 
- const Dashboard = () => {
+type Order = {
+  id?: number | string;
+  shopId?: string;
+  status?: 'pending' | 'completed' | string;
+  orderNumber?: string | number;
+  items?: unknown[];
+  created_at?: string;
+  total_amount?: number;
+  customer_name?: string;
+  phone?: string;
+  address?: string;
+};
+
+const Dashboard = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { currentShop, products, orders } = useStore();
+  const { currentShop, products } = useStore();
   const [qrCode, setQrCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'qr'>('orders');
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/orders");
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? (data as Order[]) : []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchOrders();
+  }, []);
+
 
   useEffect(() => {
     if (!currentShop) {
@@ -38,7 +67,7 @@ import { showNotification, requestNotificationPermission } from '../../utils/not
   if (!currentShop) return null;
 
   const shopProducts = products.filter((p) => p.shopId === currentShop.id);
-  const shopOrders = orders.filter((o) => o.shopId === currentShop.id);
+  const shopOrders = orders;
   const pendingOrders = shopOrders.filter((o) => o.status === 'pending');
 
   const handleDownloadQR = () => {
@@ -99,31 +128,28 @@ import { showNotification, requestNotificationPermission } from '../../utils/not
           <div className="flex">
             <button
               onClick={() => setActiveTab('orders')}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
-                activeTab === 'orders'
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === 'orders'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {t('shop.orders')}
             </button>
             <button
               onClick={() => setActiveTab('products')}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
-                activeTab === 'products'
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === 'products'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {t('shop.products')}
             </button>
             <button
               onClick={() => setActiveTab('qr')}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors ${
-                activeTab === 'qr'
+              className={`flex-1 py-4 px-6 font-semibold transition-colors ${activeTab === 'qr'
                   ? 'bg-blue-600 text-white'
                   : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {t('shop.qrCode')}
             </button>
@@ -226,7 +252,6 @@ const StatCard = ({ icon, label, value, bgColor }: StatCardProps) => (
 
 const OrdersTab = ({ orders }: { orders: any[] }) => {
   const { t } = useTranslation();
-  const { updateOrderStatus } = useStore();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -261,9 +286,9 @@ const OrdersTab = ({ orders }: { orders: any[] }) => {
         <div key={order.id} className="border border-gray-200 rounded-lg p-6">
           <div className="flex justify-between items-start mb-4">
             <div>
-              <p className="font-bold text-lg text-gray-900">{order.orderNumber}</p>
-              <p className="text-sm text-gray-600">{order.customerName}</p>
-              <p className="text-sm text-gray-600">{order.customerPhone}</p>
+              <p className="font-bold text-lg text-gray-900">Order #{order.id}</p>
+              <p className="text-sm text-gray-600">{order.customer_name}</p>
+              <p className="text-sm text-gray-600">{order.phone}</p>
             </div>
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
@@ -276,17 +301,43 @@ const OrdersTab = ({ orders }: { orders: any[] }) => {
 
           <div className="mb-4">
             <p className="text-sm text-gray-600 mb-2">{t('common.address')}:</p>
-            <p className="text-gray-900">{order.customerAddress}</p>
+            <p className="text-gray-900">{order.address}</p>
           </div>
+
+          <div className="mt-3">
+            {order.items?.map((item: any, index: number) => (
+              <p key={index} className="text-sm text-gray-600">
+                {item.product_name} × {item.quantity}
+              </p>
+            ))}
+          </div>
+
 
           <div className="flex justify-between items-center pt-4 border-t border-gray-200">
             <p className="font-bold text-lg text-gray-900">
-              {t('order.total')}: ₹{order.totalAmount}
+              {t('order.total')}: ₹{order.total_amount}
             </p>
             {order.status !== 'completed' && order.status !== 'cancelled' && (
               <select
                 value={order.status}
-                onChange={(e) => updateOrderStatus(order.id, e.target.value as any)}
+                onChange={async (e) => {
+                  const newStatus = e.target.value;
+
+                  try {
+                    await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                      method: "PUT",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      body: JSON.stringify({ status: newStatus }),
+                    });
+
+                    // update UI without reload (clean way)
+                    // window.location.reload();
+                  } catch (err) {
+                    console.error("Failed to update status:", err);
+                  }
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="pending">{t('order.pending')}</option>
