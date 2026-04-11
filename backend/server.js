@@ -2,12 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const pool = require("./config/db");
 const orderRoutes = require("./routes/orderRoutes");
-
+const shopRoutes= require("./routes/shopRoutes");
 const app = express();
+const productRoutes = require("./routes/productRoutes");
 
 app.use(cors());
 app.use(express.json());
+app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/shops", shopRoutes);
 
 app.get("/", (_req, res) => {
   res.send("API running");

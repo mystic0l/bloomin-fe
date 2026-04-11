@@ -6,13 +6,13 @@ router.post("/create", async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { customer_name, phone, address, total_amount, items } = req.body;
+    const { customer_name, phone, address, total_amount, items, shop_id } = req.body;
 
     await client.query("BEGIN");
 
     const orderResult = await client.query(
-      "INSERT INTO orders (customer_name, phone, address, total_amount) VALUES ($1, $2, $3, $4) RETURNING *",
-      [customer_name, phone, address, total_amount]
+      "INSERT INTO orders (customer_name, phone, address, total_amount, shop_id) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [customer_name, phone, address, total_amount, shop_id]
     );
 
     const orderId = orderResult.rows[0].id;

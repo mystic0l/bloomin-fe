@@ -1,14 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
+import { Product } from '../../types';
 
- const Cart = () => {
+const Cart = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { cart, shops, removeFromCart, updateCartQuantity, user } = useStore();
-  const [checkoutShopId, setCheckoutShopId] = useState<string | null>(null);
+  const { cart, removeFromCart, updateCartQuantity, user } = useStore();
+  const [shops, setShops] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/shops');
+        const data = await res.json();
+        setShops(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Error fetching shops:", err);
+      }
+    };
+  
+    fetchShops();
+  }, []);
+
+  const getProductShopId = (product: Product) => {
+    const p = product as Product & { shop_id?: string | number };
+    const raw = p.shopId ?? p.shop_id;
+    return raw != null && raw !== '' ? String(raw) : '';
+  };
+
+  const productImageUrl = (product: Product) => {
+    const p = product as Product & { image_url?: string };
+    return p.imageUrl ?? p.image_url;
+  };
+
+  const productFlavor = (product: Product) => {
+    const p = product as Product & { flavor?: string };
+    return p.flavor ?? '';
+  };
+
+  const maxQuantityOptions = (product: Product, lineQty: number) => {
+    const stock = Number((product as Product & { quantity?: number }).quantity);
+    const upper =
+      Number.isFinite(stock) && stock >= 0 ? Math.max(stock, lineQty) : Math.max(lineQty, 1);
+    return Math.min(Math.max(upper, 1), 20);
+  };
 
   if (cart.length === 0) {
     return (
@@ -41,10 +79,8 @@ import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
   }
 
   const cartByShop = cart.reduce((acc, item) => {
-    const shopId = item.product.shopId;
-    if (!acc[shopId]) {
-      acc[shopId] = [];
-    }
+    const shopId = getProductShopId(item.product) || 'unknown';
+    if (!acc[shopId]) acc[shopId] = [];
     acc[shopId].push(item);
     return acc;
   }, {} as Record<string, typeof cart>);
@@ -58,7 +94,6 @@ import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
       router.push('/auth?role=customer');
       return;
     }
-    setCheckoutShopId(shopId);
     router.push(`/customer/checkout/${shopId}`);
   };
 
@@ -76,18 +111,25 @@ import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
         <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('cart.cart')}</h1>
 
         {Object.entries(cartByShop).map(([shopId, items]) => {
-          const shop = shops.find((s) => s.id === shopId);
-          if (!shop) return null;
+          const shop = shops.find((s) => String(s.id) === String(shopId));
+          const shopTitle =
+            shop?.name ??
+            (shopId === 'unknown'
+              ? t('common.language') === 'hindi'
+                ? 'दुकान'
+                : 'Shop'
+              : `${t('common.language') === 'hindi' ? 'दुकान' : 'Shop'} #${shopId}`);
 
           const total = calculateShopTotal(items);
 
           return (
             <div key={shopId} className="mb-8 last:mb-0">
               <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">{shop.name}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{shopTitle}</h2>
                 <button
                   onClick={() => handleCheckout(shopId)}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={shopId === 'unknown'}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   {t('cart.checkout')} (₹{total.toFixed(2)})
                 </button>
@@ -96,20 +138,20 @@ import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
               <div className="space-y-4">
                 {items.map((item) => (
                   <div
-                    key={item.product.id}
+                    key={String(item.product.id)}
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
                   >
                     <div className="flex items-center gap-4 flex-1">
-                      {item.product.imageUrl && (
+                      {productImageUrl(item.product) ? (
                         <img
-                          src={item.product.imageUrl}
+                          src={productImageUrl(item.product)}
                           alt={item.product.name}
                           className="w-16 h-16 rounded-lg object-cover"
                         />
-                      )}
+                      ) : null}
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
-                        <p className="text-sm text-gray-600">{item.product.flavor}</p>
+                        <p className="text-sm text-gray-600">{productFlavor(item.product)}</p>
                         <p className="font-semibold text-gray-900 mt-1">₹{item.product.price}</p>
                       </div>
                     </div>
@@ -118,17 +160,18 @@ import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
                       <select
                         value={item.quantity}
                         onChange={(e) =>
-                          updateCartQuantity(item.product.id, parseInt(e.target.value))
+                          updateCartQuantity(String(item.product.id), parseInt(e.target.value, 10))
                         }
                         className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       >
-                        {Array.from({ length: Math.min(item.product.quantity, 20) }, (_, i) => i + 1).map(
-                          (num) => (
-                            <option key={num} value={num}>
-                              {num}
-                            </option>
-                          )
-                        )}
+                        {Array.from(
+                          { length: maxQuantityOptions(item.product, item.quantity) },
+                          (_, i) => i + 1
+                        ).map((num) => (
+                          <option key={num} value={num}>
+                            {num}
+                          </option>
+                        ))}
                       </select>
 
                       <div className="text-right min-w-[80px]">
@@ -138,7 +181,7 @@ import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
                       </div>
 
                       <button
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => removeFromCart(String(item.product.id))}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
                         <Trash2 className="w-5 h-5" />

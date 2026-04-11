@@ -2,8 +2,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
-import { Shop } from '../../types';
-
 const SHOP_TYPES = [
   'grocery',
   'pharmacy',
@@ -30,29 +28,48 @@ const SHOP_TYPES = [
     upiQrUrl: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async(e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) return;
 
-    const shop: Shop = {
-      id: Math.random().toString(36).substring(7),
+    const res = await fetch('http://localhost:5000/api/shops', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.name,
+        type: formData.type,
+        address: formData.address,
+        owner_id: user.id || 'demo-user',
+      }),
+    });
+
+    const createdShop = await res.json();
+
+    if (!res.ok) {
+      console.error('Shop create failed:', createdShop);
+      return;
+    }
+
+    // Use DB id (numeric from Postgres) as string so it matches product.shop_id and /shop/:id URLs.
+    addShop({
+      id: String(createdShop.id),
       userId: user.id,
-      name: formData.name,
-      type: formData.type,
-      address: formData.address,
+      name: createdShop.name ?? formData.name,
+      type: createdShop.type ?? formData.type,
+      address: createdShop.address ?? formData.address,
       language: formData.language,
       serviceType: formData.serviceType,
       upiId: formData.upiId || undefined,
       upiQrUrl: formData.upiQrUrl || undefined,
       isActive: true,
       createdAt: new Date().toISOString(),
-    };
+    });
 
-    addShop(shop);
     router.push('/shopkeeper/dashboard');
   };
 
+  
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-2xl shadow-lg p-8">

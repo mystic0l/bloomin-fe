@@ -1,17 +1,31 @@
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Search, Store, MapPin, Truck, ShoppingBag } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
  const ShopList = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { shops } = useStore();
+  const [shops, setShops] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
 
-  const activeShops = shops.filter((shop) => shop.isActive);
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/shops");
+        const data = await res.json();
+        setShops(data);
+      } catch (err) {
+        console.error("Error fetching shops:", err);
+      }
+    };
+  
+    fetchShops();
+  }, []);
+
+  const activeShops = shops;
 
   const shopTypes = ['all', ...Array.from(new Set(activeShops.map((shop) => shop.type)))];
 

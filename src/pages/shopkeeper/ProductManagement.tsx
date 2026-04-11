@@ -6,12 +6,14 @@ import { useEffect } from 'react';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { Product } from '../../types';
+import { mapDbProductRow } from '../../utils/mapDbProduct';
 import { Plus, Trash2, CreditCard as Edit2, ArrowLeft } from 'lucide-react';
 
- const ProductManagement = () => {
+const ProductManagement = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { currentShop, products, addProduct, updateProduct, deleteProduct } = useStore();
+  const { currentShop, products, addProduct, setProductsForShop, updateProduct, deleteProduct } =
+    useStore();
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -23,15 +25,37 @@ import { Plus, Trash2, CreditCard as Edit2, ArrowLeft } from 'lucide-react';
     imageUrl: '',
   });
 
-useEffect(() => {
-  if (!currentShop) {
-    router.push("/shopkeeper/setup");
-  }
-}, [currentShop, router]);
+  useEffect(() => {
+    if (!currentShop) {
+      router.push('/shopkeeper/setup');
+    }
+  }, [currentShop, router]);
 
+  useEffect(() => {
+    if (!currentShop?.id) return;
+    let cancelled = false;
+    const shopId = String(currentShop.id);
+
+    const load = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${shopId}`);
+        const data = await res.json();
+        if (cancelled) return;
+        const rows = Array.isArray(data) ? data : [];
+        setProductsForShop(shopId, rows.map((row) => mapDbProductRow(row as Record<string, unknown>)));
+      } catch (err) {
+        console.error('[ProductManagement] load products:', err);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentShop?.id, setProductsForShop]);
 
   const shopProducts = currentShop
-    ? products.filter((p) => p.shopId === currentShop.id)
+    ? products.filter((p) => String(p.shopId) === String(currentShop.id))
     : [];
 
   const resetForm = () => {
@@ -52,7 +76,7 @@ useEffect(() => {
     setShowForm(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (editingProduct) {
@@ -60,28 +84,44 @@ useEffect(() => {
         name: formData.name,
         flavor: formData.flavor,
         price: parseFloat(formData.price),
-        quantity: parseInt(formData.quantity),
+        quantity: parseInt(formData.quantity, 10),
         imageUrl: formData.imageUrl || undefined,
       });
-    } else {
-      if (!currentShop) {
-        // Optionally show an error or return early
-        return;
-      }
-      const product: Product = {
-        id: Math.random().toString(36).substring(7),
-        shopId: currentShop.id,
-        name: formData.name,
-        flavor: formData.flavor,
-        price: parseFloat(formData.price),
-        quantity: parseInt(formData.quantity),
-        imageUrl: formData.imageUrl || undefined,
-        isActive: true,
-      };
-      addProduct(product);
+      resetForm();
+      return;
     }
 
-    resetForm();
+    if (!currentShop) return;
+
+    const shopIdNum = Number(currentShop.id);
+    const payload = {
+      name: formData.name,
+      price: parseFloat(formData.price),
+      quantity: parseInt(formData.quantity, 10),
+      shop_id: shopIdNum,
+    };
+
+    console.log('[ProductManagement] POST /api/products', payload);
+
+    try {
+      const res = await fetch('http://localhost:5000/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('[ProductManagement] create failed:', data);
+        return;
+      }
+
+      console.log('[ProductManagement] created product row:', data);
+      addProduct(mapDbProductRow(data as Record<string, unknown>));
+      resetForm();
+    } catch (err) {
+      console.error('[ProductManagement] FETCH ERROR:', err);
+    }
   };
 
   const handleDelete = (productId: string) => {

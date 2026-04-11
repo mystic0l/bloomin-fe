@@ -27,11 +27,15 @@ interface AppState {
   removeFromCart: (productId: string) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
+  /** Remove only lines for one shop (after checkout). */
+  clearCartForShop: (shopId: string) => void;
 
   addShop: (shop: Shop) => void;
   updateShop: (shopId: string, updates: Partial<Shop>) => void;
 
   addProduct: (product: Product) => void;
+  /** Replace all persisted products for one shop (e.g. after GET /api/products/:shopId). */
+  setProductsForShop: (shopId: string, products: Product[]) => void;
   updateProduct: (productId: string, updates: Partial<Product>) => void;
   deleteProduct: (productId: string) => void;
 
@@ -93,30 +97,42 @@ export const useStore = create<AppState>()(
       },
 
       addToCart: (product, quantity) => set((state) => {
-        const existing = state.cart.find(item => item.product.id === product.id);
+        const pid = String(product.id);
+        const existing = state.cart.find((item) => String(item.product.id) === pid);
         if (existing) {
           return {
-            cart: state.cart.map(item =>
-              item.product.id === product.id
+            cart: state.cart.map((item) =>
+              String(item.product.id) === pid
                 ? { ...item, quantity: item.quantity + quantity }
                 : item
-            )
+            ),
           };
         }
         return { cart: [...state.cart, { product, quantity }] };
       }),
 
-      removeFromCart: (productId) => set((state) => ({
-        cart: state.cart.filter(item => item.product.id !== productId)
-      })),
+      removeFromCart: (productId) =>
+        set((state) => ({
+          cart: state.cart.filter((item) => String(item.product.id) !== String(productId)),
+        })),
 
-      updateCartQuantity: (productId, quantity) => set((state) => ({
-        cart: state.cart.map(item =>
-          item.product.id === productId ? { ...item, quantity } : item
-        )
-      })),
+      updateCartQuantity: (productId, quantity) =>
+        set((state) => ({
+          cart: state.cart.map((item) =>
+            String(item.product.id) === String(productId) ? { ...item, quantity } : item
+          ),
+        })),
 
       clearCart: () => set({ cart: [] }),
+
+      clearCartForShop: (shopId) =>
+        set((state) => ({
+          cart: state.cart.filter((item) => {
+            const p = item.product as Product & { shop_id?: string | number };
+            const sid = p.shopId ?? p.shop_id;
+            return String(sid ?? '') !== String(shopId);
+          }),
+        })),
 
       addShop: (shop) => set((state) => ({
         shops: [...state.shops, shop],
@@ -135,6 +151,14 @@ export const useStore = create<AppState>()(
       addProduct: (product) => set((state) => ({
         products: [...state.products, product]
       })),
+
+      setProductsForShop: (shopId, newProducts) =>
+        set((state) => ({
+          products: [
+            ...state.products.filter((p) => String(p.shopId) !== String(shopId)),
+            ...newProducts,
+          ],
+        })),
 
       updateProduct: (productId, updates) => set((state) => ({
         products: state.products.map(product =>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
@@ -6,23 +6,82 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react';
 import { Product } from '../../types';
 
- const ShopView = () => {
+function normalizeRouteShopId(params: ReturnType<typeof useParams>): string | undefined {
+  const raw = params?.shopId ?? params?.id;
+  if (raw == null || raw === '') return undefined;
+  return Array.isArray(raw) ? raw[0] : String(raw);
+}
+
+const ShopView = () => {
   const params = useParams();
-  const shopId = params?.shopId as string;
+  const shopId = normalizeRouteShopId(params);
   const router = useRouter();
   const { t } = useTranslation();
-  const { shops, products, cart, addToCart } = useStore();
-
+  const { cart, addToCart } = useStore();
+  const [shop, setShop] = useState<any>(null);
+  const [shopLoading, setShopLoading] = useState(true);
+  const [products, setProducts] = useState<any[]>([]);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
-  const shop = shops.find((s) => s.id === shopId);
-  const shopProducts = products.filter((p) => p.shopId === shopId && p.isActive);
+  useEffect(() => {
+    console.log('[ShopView] shopId from route:', shopId);
+  }, [shopId]);
 
-  if (!shop) {
+  useEffect(() => {
+    if (!shopId) {
+      setShop(null);
+      setShopLoading(false);
+      return;
+    }
+
+    const fetchShop = async () => {
+      setShopLoading(true);
+      try {
+        const res = await fetch('http://localhost:5000/api/shops');
+        const data = await res.json();
+        const found = data.find((s: any) => String(s.id) === String(shopId));
+        setShop(found ?? null);
+      } catch (err) {
+        console.error('Error fetching shop:', err);
+        setShop(null);
+      } finally {
+        setShopLoading(false);
+      }
+    };
+
+    fetchShop();
+  }, [shopId]);
+
+  useEffect(() => {
+    if (!shopId) {
+      setProducts([]);
+      return;
+    }
+
+    const fetchProducts = async () => {
+      const url = `http://localhost:5000/api/products/${shopId}`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : [];
+        console.log('[ShopView] fetched products for shopId', shopId, ':', list);
+        setProducts(list);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setProducts([]);
+      }
+    };
+
+    fetchProducts();
+  }, [shopId]);
+
+  const shopProducts = products;
+
+  if (!shopId) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">
-          {t('common.language') === 'hindi' ? 'दुकान नहीं मिली' : 'Shop not found'}
+          {t('common.language') === 'hindi' ? 'अमान्य दुकान लिंक' : 'Invalid shop link'}
         </p>
       </div>
     );
@@ -65,16 +124,32 @@ import { Product } from '../../types';
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{shop.name}</h1>
-        <p className="text-gray-600 mb-4">{shop.address}</p>
-        <div className="flex gap-2">
-          <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-            {shop.type.charAt(0).toUpperCase() + shop.type.slice(1)}
-          </span>
-          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-            {shop.serviceType === 'delivery' ? t('shop.delivery') : t('shop.takeout')}
-          </span>
-        </div>
+        {shopLoading ? (
+          <p className="text-gray-500">{t('common.language') === 'hindi' ? 'लोड हो रहा है…' : 'Loading shop…'}</p>
+        ) : shop ? (
+          <>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">{shop.name}</h1>
+            <p className="text-gray-600 mb-4">{shop.address}</p>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                {shop.type
+                  ? shop.type.charAt(0).toUpperCase() + shop.type.slice(1)
+                  : ''}
+              </span>
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                {(shop.serviceType ?? shop.service_type) === 'delivery'
+                  ? t('shop.delivery')
+                  : t('shop.takeout')}
+              </span>
+            </div>
+          </>
+        ) : (
+          <p className="text-gray-500">
+            {t('common.language') === 'hindi'
+              ? `दुकान #${shopId} सूची में नहीं मिली — उत्पाद नीचे दिख सकते हैं`
+              : `Shop #${shopId} was not found in the directory — products below may still load.`}
+          </p>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-lg p-8">

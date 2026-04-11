@@ -5,10 +5,13 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { Package, ShoppingCart, QrCode, Settings, Plus } from 'lucide-react';
 import { generateQRCode, downloadQRCode } from '../../utils/qrcode';
 import { showNotification, requestNotificationPermission } from '../../utils/notifications';
+import { mapDbProductRow } from '../../utils/mapDbProduct';
 
 type Order = {
   id?: number | string;
   shopId?: string;
+  /** Postgres column name on API responses */
+  shop_id?: number | string;
   status?: 'pending' | 'completed' | string;
   orderNumber?: string | number;
   items?: unknown[];
@@ -19,10 +22,15 @@ type Order = {
   address?: string;
 };
 
+function orderShopId(o: Order): string {
+  const raw = o.shop_id ?? o.shopId;
+  return raw != null && raw !== '' ? String(raw) : '';
+}
+
 const Dashboard = () => {
   const router = useRouter();
   const { t } = useTranslation();
-  const { currentShop, products } = useStore();
+  const { currentShop, products, setProductsForShop } = useStore();
   const [qrCode, setQrCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'qr'>('orders');
 
@@ -55,20 +63,47 @@ const Dashboard = () => {
   }, [currentShop, router]);
 
   useEffect(() => {
-    const latestOrder = orders[orders.length - 1];
-    if (latestOrder && latestOrder.shopId === currentShop?.id && latestOrder.status === 'pending') {
+    const latestOrder = orders[0];
+    if (
+      latestOrder &&
+      orderShopId(latestOrder) === String(currentShop?.id ?? '') &&
+      (latestOrder.status ?? 'pending') === 'pending'
+    ) {
       showNotification(t('order.new'), {
-        body: `${t('order.orderNumber')}: ${latestOrder.orderNumber}`,
+        body: `${t('order.orderNumber')}: #${latestOrder.id}`,
         icon: '/icon-192x192.png',
       });
     }
   }, [orders, currentShop, t]);
 
+  useEffect(() => {
+    if (!currentShop?.id) return;
+    let cancelled = false;
+    const shopId = String(currentShop.id);
+
+    const load = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/products/${shopId}`);
+        const data = await res.json();
+        if (cancelled) return;
+        const rows = Array.isArray(data) ? data : [];
+        setProductsForShop(shopId, rows.map((row) => mapDbProductRow(row as Record<string, unknown>)));
+      } catch (err) {
+        console.error('[Dashboard] load products:', err);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentShop?.id, setProductsForShop]);
+
   if (!currentShop) return null;
 
-  const shopProducts = products.filter((p) => p.shopId === currentShop.id);
-  const shopOrders = orders;
-  const pendingOrders = shopOrders.filter((o) => o.status === 'pending');
+  const shopProducts = products.filter((p) => String(p.shopId) === String(currentShop.id));
+  const shopOrders = orders.filter((o) => orderShopId(o) === String(currentShop.id));
+  const pendingOrders = shopOrders.filter((o) => (o.status ?? 'pending') === 'pending');
 
   const handleDownloadQR = () => {
     if (qrCode) {
@@ -118,7 +153,7 @@ const Dashboard = () => {
         <StatCard
           icon={<ShoppingCart className="w-8 h-8 text-green-600" />}
           label={t('order.completed')}
-          value={shopOrders.filter((o) => o.status === 'completed').length}
+          value={shopOrders.filter((o) => (o.status ?? '') === 'completed').length}
           bgColor="bg-green-50"
         />
       </div>
@@ -158,7 +193,14 @@ const Dashboard = () => {
 
         <div className="p-8">
           {activeTab === 'orders' && (
-            <OrdersTab orders={shopOrders} />
+            <OrdersTab
+              orders={shopOrders}
+              onOrderStatusUpdated={(orderId, status) => {
+                setOrders((prev) =>
+                  prev.map((o) => (String(o.id) === String(orderId) ? { ...o, status } : o))
+                );
+              }}
+            />
           )}
 
           {activeTab === 'products' && (
@@ -250,7 +292,13 @@ const StatCard = ({ icon, label, value, bgColor }: StatCardProps) => (
   </div>
 );
 
-const OrdersTab = ({ orders }: { orders: any[] }) => {
+const OrdersTab = ({
+  orders,
+  onOrderStatusUpdated,
+}: {
+  orders: Order[];
+  onOrderStatusUpdated?: (orderId: string | number, status: string) => void;
+}) => {
   const { t } = useTranslation();
 
   const getStatusColor = (status: string) => {
@@ -292,10 +340,10 @@ const OrdersTab = ({ orders }: { orders: any[] }) => {
             </div>
             <span
               className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(
-                order.status
+                order.status ?? 'pending'
               )}`}
             >
-              {t(`order.${order.status}`)}
+              {t(`order.${order.status ?? 'pending'}`)}
             </span>
           </div>
 
@@ -317,25 +365,26 @@ const OrdersTab = ({ orders }: { orders: any[] }) => {
             <p className="font-bold text-lg text-gray-900">
               {t('order.total')}: ₹{order.total_amount}
             </p>
-            {order.status !== 'completed' && order.status !== 'cancelled' && (
+            {(order.status ?? 'pending') !== 'completed' &&
+              (order.status ?? 'pending') !== 'cancelled' && (
               <select
-                value={order.status}
+                value={order.status ?? 'pending'}
                 onChange={async (e) => {
                   const newStatus = e.target.value;
 
                   try {
-                    await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
-                      method: "PUT",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
+                    const res = await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                      method: 'PUT',
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ status: newStatus }),
                     });
-
-                    // update UI without reload (clean way)
-                    // window.location.reload();
+                    if (!res.ok) {
+                      console.error('Status update failed:', await res.text());
+                      return;
+                    }
+                    onOrderStatusUpdated?.(order.id as string | number, newStatus);
                   } catch (err) {
-                    console.error("Failed to update status:", err);
+                    console.error('Failed to update status:', err);
                   }
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"

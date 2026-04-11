@@ -1,19 +1,76 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
-import { Order, OrderItem } from '../../types';
+import { Product } from '../../types';
 
- const Checkout = () => {
+function normalizeRouteShopId(params: ReturnType<typeof useParams>): string | undefined {
+  const raw = params?.shopId ?? params?.id;
+  if (raw == null || raw === '') return undefined;
+  return Array.isArray(raw) ? raw[0] : String(raw);
+}
+
+function productShopId(product: Product): string {
+  const p = product as Product & { shop_id?: string | number };
+  const raw = p.shopId ?? p.shop_id;
+  return raw != null && raw !== '' ? String(raw) : '';
+}
+
+function productFlavorLine(product: Product): string {
+  const p = product as Product & { flavor?: string };
+  return p.flavor ?? '';
+}
+
+const Checkout = () => {
   const params = useParams();
-  const shopId = params?.shopId as string;
+  const shopId = normalizeRouteShopId(params);
   const router = useRouter();
   const { t } = useTranslation();
-  const { user, cart, shops, currentCustomer, addOrder, clearCart } = useStore();
+  const { user, cart, shops, currentCustomer, clearCartForShop } = useStore();
+
+  const [fetchedShops, setFetchedShops] = useState<Record<string, unknown>[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/shops');
+        const data = await res.json();
+        if (!cancelled) setFetchedShops(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('[Checkout] fetch shops:', err);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const shop = useMemo(() => {
+    if (!shopId) return undefined;
+    const id = String(shopId);
+    const fromApi = fetchedShops.find((s) => String(s.id) === id);
+    const fromStore = shops.find((s) => String(s.id) === id);
+    const raw = fromApi ?? fromStore;
+    if (!raw) return undefined;
+    const r = raw as Record<string, unknown>;
+    return {
+      ...raw,
+      serviceType: (r.serviceType ?? r.service_type) as 'takeout' | 'delivery' | undefined,
+      upiId: r.upiId ?? r.upi_id,
+      upiQrUrl: r.upiQrUrl ?? r.upi_qr_url,
+    };
+  }, [shopId, fetchedShops, shops]);
+
+  const shopCartItems = useMemo(() => {
+    if (!shopId) return [];
+    const id = String(shopId);
+    return cart.filter((item) => productShopId(item.product) === id);
+  }, [cart, shopId]);
 
   const [formData, setFormData] = useState({
     name: currentCustomer?.name || '',
@@ -24,95 +81,77 @@ import { Order, OrderItem } from '../../types';
 
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [orderId, setOrderId] = useState('');
-  const [redirect, setRedirect] = useState<null | string>(null); // new redirect state
 
-  const shop = shops.find((s) => s.id === shopId);
-  const shopCartItems = cart.filter((item) => item.product.shopId === shopId);
   const total = shopCartItems.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + Number(item.product.price) * item.quantity,
     0
   );
 
-  // ✅ useEffect for redirects
   useEffect(() => {
-    if (!shopId) setRedirect("/customer/shops");
-    else if (!shop || shopCartItems.length === 0) setRedirect("/customer/cart");
-
-    if (redirect) {
-      router.push(redirect);
+    if (!shopId) {
+      router.replace('/customer/shops');
+      return;
     }
-  }, [shopId, shop, shopCartItems.length, redirect, router]);
+    if (shopCartItems.length === 0) {
+      router.replace('/customer/cart');
+    }
+  }, [shopId, shopCartItems.length, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) {
-      setRedirect("/auth?role=customer");
+      router.push('/auth?role=customer');
       return;
     }
+
+    if (!shopId || shopCartItems.length === 0) return;
+
     const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-    const orderItems: OrderItem[] = shopCartItems.map((item) => ({
-      id: Math.random().toString(36).substring(7),
-      productId: item.product.id,
-      productName: item.product.name,
-      productFlavor: item.product.flavor,
-      quantity: item.quantity,
-      price: item.product.price,
-      subtotal: item.product.price * item.quantity,
-    }));
-
-    const order: Order = {
-      id: Math.random().toString(36).substring(7),
-      orderNumber,
-      shopId,
-      customerId: currentCustomer?.id || user.id,
-      customerName: formData.name,
-      customerPhone: formData.phone,
-      customerAddress: formData.address,
-      paymentMethod: formData.paymentMethod,
-      status: 'pending',
-      totalAmount: total,
-      items: orderItems,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-
     try {
-      const response = await fetch("http://localhost:5000/api/orders/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await fetch('http://localhost:5000/api/orders/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer_name: formData.name,
           phone: formData.phone,
           address: formData.address,
           total_amount: total,
-          items: shopCartItems.map(item => ({
+          shop_id: Number(shopId),
+          items: shopCartItems.map((item) => ({
             product_name: item.product.name,
             quantity: item.quantity,
-            price: item.product.price,
-            subtotal: item.product.price * item.quantity
-          }))
-        })
+            price: Number(item.product.price),
+            subtotal: Number(item.product.price) * item.quantity,
+          })),
+        }),
       });
-    
+
       const data = await response.json();
-      console.log("Saved to backend:", data);
+      if (!response.ok) {
+        console.error('[Checkout] order failed:', data);
+        return;
+      }
+      console.log('[Checkout] saved:', data);
     } catch (error) {
-      console.error("Backend error:", error);
+      console.error('[Checkout] backend error:', error);
+      return;
     }
 
-      clearCart();
+    clearCartForShop(String(shopId));
 
     setOrderId(orderNumber);
     setOrderPlaced(true);
   };
 
- if (redirect) return null;
+  if (!shopId) {
+    return null;
+  }
 
+  if (shopCartItems.length === 0 && !orderPlaced) {
+    return null;
+  }
 
   if (orderPlaced) {
     return (
@@ -156,7 +195,7 @@ import { Order, OrderItem } from '../../types';
   }
 
   const showPaymentOptions = shop?.serviceType === 'delivery';
-  const showUpiOption = showPaymentOptions && (shop?.upiId || shop?.upiQrUrl);
+  const showUpiOption = showPaymentOptions && !!(shop?.upiId || shop?.upiQrUrl);
 
   return (
     <div className="space-y-6">
@@ -172,6 +211,14 @@ import { Order, OrderItem } from '../../types';
         <div className="lg:col-span-2">
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('cart.checkout')}</h1>
+
+            {!shop && (
+              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                {t('common.language') === 'hindi'
+                  ? 'दुकान विवरण लोड हो रहा है या सूची में नहीं है — आप फिर भी ऑर्डर दे सकते हैं।'
+                  : 'Shop details are loading or not in the directory — you can still place your order.'}
+              </p>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -216,8 +263,8 @@ import { Order, OrderItem } from '../../types';
                         ? 'डिलीवरी पता'
                         : 'Delivery address'
                       : t('common.language') === 'hindi'
-                      ? 'पिकअप के लिए पता'
-                      : 'Address for pickup'
+                        ? 'पिकअप के लिए पता'
+                        : 'Address for pickup'
                   }
                 />
               </div>
@@ -247,7 +294,7 @@ import { Order, OrderItem } from '../../types';
                       </span>
                     </label>
 
-                    {showUpiOption && (
+                    {showUpiOption && shop && (
                       <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                         <input
                           type="radio"
@@ -269,7 +316,7 @@ import { Order, OrderItem } from '../../types';
                     )}
                   </div>
 
-                  {formData.paymentMethod === 'upi_on_delivery' && shop.upiQrUrl && (
+                  {formData.paymentMethod === 'upi_on_delivery' && !!shop?.upiQrUrl && (
                     <div className="mt-4 p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-gray-700 mb-2">
                         {t('common.language') === 'hindi'
@@ -277,7 +324,7 @@ import { Order, OrderItem } from '../../types';
                           : 'Scan this QR code on delivery'}
                       </p>
                       <img
-                        src={shop.upiQrUrl}
+                        src={String(shop.upiQrUrl)}
                         alt="UPI QR"
                         className="w-32 h-32 mx-auto"
                       />
@@ -302,12 +349,12 @@ import { Order, OrderItem } from '../../types';
 
             <div className="space-y-3 mb-4">
               {shopCartItems.map((item) => (
-                <div key={item.product.id} className="flex justify-between text-sm">
+                <div key={String(item.product.id)} className="flex justify-between text-sm">
                   <span className="text-gray-600">
-                    {item.product.name} ({item.product.flavor}) x{item.quantity}
+                    {item.product.name} ({productFlavorLine(item.product)}) x{item.quantity}
                   </span>
                   <span className="font-medium text-gray-900">
-                    ₹{(item.product.price * item.quantity).toFixed(2)}
+                    ₹{(Number(item.product.price) * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
