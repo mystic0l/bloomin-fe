@@ -2,21 +2,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
+import { Store } from 'lucide-react';
+
 const SHOP_TYPES = [
-  'grocery',
-  'pharmacy',
-  'restaurant',
-  'electronics',
-  'clothing',
-  'hardware',
-  'bakery',
-  'stationery',
+  'grocery', 'pharmacy', 'restaurant', 'electronics',
+  'clothing', 'hardware', 'bakery', 'stationery',
 ];
 
- const ShopSetup = () => {
+const ShopSetup = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, addShop } = useStore();
+  const isHindi = t('common.language') === 'hindi';
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,9 +25,8 @@ const SHOP_TYPES = [
     upiQrUrl: '',
   });
 
-  const handleSubmit = async(e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!user) return;
 
     const res = await fetch('http://localhost:5000/api/shops', {
@@ -45,13 +41,8 @@ const SHOP_TYPES = [
     });
 
     const createdShop = await res.json();
+    if (!res.ok) { console.error('Shop create failed:', createdShop); return; }
 
-    if (!res.ok) {
-      console.error('Shop create failed:', createdShop);
-      return;
-    }
-
-    // Use DB id (numeric from Postgres) as string so it matches product.shop_id and /shop/:id URLs.
     addShop({
       id: String(createdShop.id),
       userId: user.id,
@@ -69,20 +60,29 @@ const SHOP_TYPES = [
     router.push('/shopkeeper/dashboard');
   };
 
-  
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('shop.setup')}</h1>
-        <p className="text-gray-600 mb-8">
-          {t('common.language') === 'hindi'
-            ? 'अपनी दुकान की जानकारी भरें (6-7 प्रश्न)'
-            : 'Fill in your shop information (6-7 questions)'}
-        </p>
+    <div className="max-w-2xl mx-auto pb-8">
+      {/* Page title */}
+      <div className="flex items-center gap-3 mb-5 sm:mb-7">
+        <div
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: 'var(--saffron-pale)' }}
+        >
+          <Store className="w-5 h-5" style={{ color: 'var(--saffron)' }} />
+        </div>
+        <div>
+          <h1 className="section-title text-xl sm:text-2xl">{t('shop.setup')}</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {isHindi ? 'अपनी दुकान की जानकारी भरें' : 'Fill in your shop information'}
+          </p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="card p-5 sm:p-8">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Shop name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
               {t('shop.shopName')} *
             </label>
             <input
@@ -90,22 +90,23 @@ const SHOP_TYPES = [
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input-base"
               placeholder="My Shop"
             />
           </div>
 
+          {/* Shop type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
               {t('shop.shopType')} *
             </label>
             <select
               value={formData.type}
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               required
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input-base"
             >
-              <option value="">{t('common.language') === 'hindi' ? 'चुनें' : 'Select'}</option>
+              <option value="">{isHindi ? 'चुनें' : 'Select type'}</option>
               {SHOP_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -114,8 +115,9 @@ const SHOP_TYPES = [
             </select>
           </div>
 
+          {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
               {t('common.address')} *
             </label>
             <textarea
@@ -123,105 +125,93 @@ const SHOP_TYPES = [
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               required
               rows={3}
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={t('common.language') === 'hindi' ? 'पूरा पता' : 'Full address'}
+              className="input-base resize-none"
+              placeholder={isHindi ? 'पूरा पता' : 'Full address'}
             />
           </div>
 
+          {/* Language */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
               {t('shop.language')} *
             </label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, language: 'english' })}
-                className={`py-3 px-4 rounded-lg font-medium transition-all ${
-                  formData.language === 'english'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                English
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, language: 'hindi' })}
-                className={`py-3 px-4 rounded-lg font-medium transition-all ${
-                  formData.language === 'hindi'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                हिंदी
-              </button>
+            <div className="grid grid-cols-2 gap-3">
+              {(['english', 'hindi'] as const).map((lang) => (
+                <button
+                  key={lang}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, language: lang })}
+                  className="py-3 px-4 rounded-xl font-semibold text-sm transition-all"
+                  style={
+                    formData.language === lang
+                      ? { background: 'var(--saffron)', color: 'white', boxShadow: '0 2px 8px rgba(255,107,53,0.3)' }
+                      : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                  }
+                >
+                  {lang === 'english' ? 'English' : 'हिंदी'}
+                </button>
+              ))}
             </div>
           </div>
 
+          {/* Service type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
               {t('shop.serviceType')} *
             </label>
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, serviceType: 'takeout' })}
-                className={`py-3 px-4 rounded-lg font-medium transition-all ${
-                  formData.serviceType === 'takeout'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t('shop.takeout')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, serviceType: 'delivery' })}
-                className={`py-3 px-4 rounded-lg font-medium transition-all ${
-                  formData.serviceType === 'delivery'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t('shop.delivery')}
-              </button>
+            <div className="grid grid-cols-2 gap-3">
+              {(['takeout', 'delivery'] as const).map((sType) => (
+                <button
+                  key={sType}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, serviceType: sType })}
+                  className="py-3 px-4 rounded-xl font-semibold text-sm transition-all"
+                  style={
+                    formData.serviceType === sType
+                      ? { background: 'var(--saffron)', color: 'white', boxShadow: '0 2px 8px rgba(255,107,53,0.3)' }
+                      : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                  }
+                >
+                  {sType === 'takeout' ? t('shop.takeout') : t('shop.delivery')}
+                </button>
+              ))}
             </div>
           </div>
 
+          {/* UPI (delivery only) */}
           {formData.serviceType === 'delivery' && (
-            <>
+            <div className="space-y-4 p-4 rounded-2xl" style={{ background: '#FAFAFA', border: '1px solid #F1F5F9' }}>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                {isHindi ? 'भुगतान (वैकल्पिक)' : 'Payment (Optional)'}
+              </p>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
                   {t('shop.upiId')}
                 </label>
                 <input
                   type="text"
                   value={formData.upiId}
                   onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-base"
                   placeholder="yourname@upi"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
                   {t('shop.upiQr')}
                 </label>
                 <input
                   type="url"
                   value={formData.upiQrUrl}
                   onChange={(e) => setFormData({ ...formData, upiQrUrl: e.target.value })}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-base"
                   placeholder="https://..."
                 />
               </div>
-            </>
+            </div>
           )}
 
-          <button
-            type="submit"
-            className="w-full py-4 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
+          <button type="submit" className="btn-primary w-full py-3.5 text-base rounded-2xl mt-2">
             {t('common.submit')}
           </button>
         </form>

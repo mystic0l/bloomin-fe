@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ShoppingBag } from 'lucide-react';
 import { Product } from '../../types';
 
 function normalizeRouteShopId(params: ReturnType<typeof useParams>): string | undefined {
@@ -31,6 +31,7 @@ const Checkout = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, cart, shops, currentCustomer, clearCartForShop } = useStore();
+  const isHindi = t('common.language') === 'hindi';
 
   const [fetchedShops, setFetchedShops] = useState<Record<string, unknown>[]>([]);
 
@@ -45,9 +46,7 @@ const Checkout = () => {
         console.error('[Checkout] fetch shops:', err);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const shop = useMemo(() => {
@@ -83,32 +82,20 @@ const Checkout = () => {
   const [orderId, setOrderId] = useState('');
 
   const total = shopCartItems.reduce(
-    (sum, item) => sum + Number(item.product.price) * item.quantity,
-    0
+    (sum, item) => sum + Number(item.product.price) * item.quantity, 0
   );
 
   useEffect(() => {
-    if (!shopId) {
-      router.replace('/customer/shops');
-      return;
-    }
-    if (shopCartItems.length === 0) {
-      router.replace('/customer/cart');
-    }
+    if (!shopId) { router.replace('/customer/shops'); return; }
+    if (shopCartItems.length === 0) router.replace('/customer/cart');
   }, [shopId, shopCartItems.length, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!user) {
-      router.push('/auth?role=customer');
-      return;
-    }
-
+    if (!user) { router.push('/auth?role=customer'); return; }
     if (!shopId || shopCartItems.length === 0) return;
 
     const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
-
     try {
       const response = await fetch('http://localhost:5000/api/orders/create', {
         method: 'POST',
@@ -127,12 +114,8 @@ const Checkout = () => {
           })),
         }),
       });
-
       const data = await response.json();
-      if (!response.ok) {
-        console.error('[Checkout] order failed:', data);
-        return;
-      }
+      if (!response.ok) { console.error('[Checkout] order failed:', data); return; }
       console.log('[Checkout] saved:', data);
     } catch (error) {
       console.error('[Checkout] backend error:', error);
@@ -140,51 +123,56 @@ const Checkout = () => {
     }
 
     clearCartForShop(String(shopId));
-
     setOrderId(orderNumber);
     setOrderPlaced(true);
   };
 
-  if (!shopId) {
-    return null;
-  }
-
-  if (shopCartItems.length === 0 && !orderPlaced) {
-    return null;
-  }
+  if (!shopId) return null;
+  if (shopCartItems.length === 0 && !orderPlaced) return null;
 
   if (orderPlaced) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            {t('common.language') === 'hindi' ? 'ऑर्डर सफल!' : 'Order Successful!'}
+      <div className="max-w-lg mx-auto pb-8">
+        <div className="card p-8 sm:p-10 text-center">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-5"
+            style={{ background: 'var(--emerald-pale)' }}
+          >
+            <CheckCircle className="w-8 h-8" style={{ color: 'var(--emerald)' }} />
+          </div>
+          <h1 className="section-title text-2xl sm:text-3xl mb-2">
+            {isHindi ? 'ऑर्डर सफल!' : 'Order Placed!'}
           </h1>
-          <p className="text-gray-600 mb-2">
-            {t('common.language') === 'hindi'
+          <p className="text-sm text-slate-500 mb-6">
+            {isHindi
               ? 'आपका ऑर्डर सफलतापूर्वक प्राप्त हो गया है'
               : 'Your order has been received successfully'}
           </p>
-          <div className="bg-blue-50 rounded-lg p-4 mb-6">
-            <p className="text-sm text-gray-600 mb-1">{t('order.orderNumber')}</p>
-            <p className="text-2xl font-bold text-blue-600">{orderId}</p>
+          <div
+            className="rounded-2xl p-4 mb-6"
+            style={{ background: 'var(--saffron-pale)' }}
+          >
+            <p className="text-xs text-slate-500 mb-1">{t('order.orderNumber')}</p>
+            <p className="text-xl font-bold" style={{ color: 'var(--saffron)', fontFamily: 'Syne, sans-serif' }}>
+              {orderId}
+            </p>
           </div>
-          <p className="text-gray-600 mb-6">
-            {t('common.language') === 'hindi'
-              ? 'आप "मेरे ऑर्डर" में अपने ऑर्डर को ट्रैक कर सकते हैं'
-              : 'You can track your order in "My Orders"'}
+          <p className="text-sm text-slate-500 mb-7">
+            {isHindi
+              ? '"मेरे ऑर्डर" में अपने ऑर्डर को ट्रैक करें'
+              : 'Track your order in "My Orders"'}
           </p>
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => router.push('/customer/orders')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="btn-primary flex-1 justify-center py-3"
             >
               {t('order.myOrders')}
             </button>
             <button
               onClick={() => router.push('/customer/shops')}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              className="px-5 py-3 rounded-xl text-sm font-semibold flex-1 transition-colors"
+              style={{ background: '#F1F5F9', color: 'var(--slate-mid)' }}
             >
               {t('customer.browseShops')}
             </button>
@@ -198,31 +186,37 @@ const Checkout = () => {
   const showUpiOption = showPaymentOptions && !!(shop?.upiId || shop?.upiQrUrl);
 
   return (
-    <div className="space-y-6">
-      <button
-        onClick={() => router.push('/customer/cart')}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        {t('common.back')}
-      </button>
+    <div className="space-y-4 sm:space-y-6 pb-8">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.push('/customer/cart')}
+          className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl"
+          style={{ color: 'var(--slate-mid)', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">{t('common.back')}</span>
+        </button>
+        <h1 className="section-title text-xl sm:text-2xl">{t('cart.checkout')}</h1>
+      </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('cart.checkout')}</h1>
-
+      <div className="grid lg:grid-cols-5 gap-5">
+        {/* Form */}
+        <div className="lg:col-span-3">
+          <div className="card p-5 sm:p-7">
             {!shop && (
-              <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
-                {t('common.language') === 'hindi'
-                  ? 'दुकान विवरण लोड हो रहा है या सूची में नहीं है — आप फिर भी ऑर्डर दे सकते हैं।'
-                  : 'Shop details are loading or not in the directory — you can still place your order.'}
-              </p>
+              <div
+                className="mb-5 p-3.5 rounded-xl text-sm"
+                style={{ background: '#FFFBEB', color: '#92400E', border: '1px solid #FDE68A' }}
+              >
+                {isHindi
+                  ? 'दुकान विवरण लोड हो रहा है — आप फिर भी ऑर्डर दे सकते हैं।'
+                  : 'Shop details loading — you can still place your order.'}
+              </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
                   {t('common.name')} *
                 </label>
                 <input
@@ -230,12 +224,12 @@ const Checkout = () => {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-base"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
                   {t('common.phone')} *
                 </label>
                 <input
@@ -243,12 +237,12 @@ const Checkout = () => {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   required
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-base"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
                   {t('common.address')} *
                 </label>
                 <textarea
@@ -256,115 +250,101 @@ const Checkout = () => {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   required
                   rows={3}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="input-base resize-none"
                   placeholder={
                     shop?.serviceType === 'delivery'
-                      ? t('common.language') === 'hindi'
-                        ? 'डिलीवरी पता'
-                        : 'Delivery address'
-                      : t('common.language') === 'hindi'
-                        ? 'पिकअप के लिए पता'
-                        : 'Address for pickup'
+                      ? (isHindi ? 'डिलीवरी पता' : 'Delivery address')
+                      : (isHindi ? 'पिकअप पता' : 'Pickup address')
                   }
                 />
               </div>
 
               {showPaymentOptions && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
                     {t('customer.paymentMethod')} *
                   </label>
-                  <div className="space-y-3">
-                    <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value="cash_on_delivery"
-                        checked={formData.paymentMethod === 'cash_on_delivery'}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            paymentMethod: e.target.value as 'cash_on_delivery',
-                          })
+                  <div className="space-y-2.5">
+                    {[
+                      { val: 'cash_on_delivery', label: t('customer.cashOnDelivery') },
+                      ...(showUpiOption ? [{ val: 'upi_on_delivery', label: t('customer.upiOnDelivery') }] : []),
+                    ].map((opt) => (
+                      <label
+                        key={opt.val}
+                        className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-colors border"
+                        style={
+                          formData.paymentMethod === opt.val
+                            ? { borderColor: 'var(--saffron)', background: 'var(--saffron-pale)' }
+                            : { borderColor: '#E2E8F0', background: 'white' }
                         }
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="ml-3 font-medium text-gray-900">
-                        {t('customer.cashOnDelivery')}
-                      </span>
-                    </label>
-
-                    {showUpiOption && shop && (
-                      <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                      >
                         <input
                           type="radio"
                           name="paymentMethod"
-                          value="upi_on_delivery"
-                          checked={formData.paymentMethod === 'upi_on_delivery'}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              paymentMethod: e.target.value as 'upi_on_delivery',
-                            })
-                          }
-                          className="w-4 h-4 text-blue-600"
+                          value={opt.val}
+                          checked={formData.paymentMethod === opt.val}
+                          onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as any })}
+                          className="w-4 h-4"
+                          style={{ accentColor: 'var(--saffron)' }}
                         />
-                        <span className="ml-3 font-medium text-gray-900">
-                          {t('customer.upiOnDelivery')}
-                        </span>
+                        <span className="text-sm font-medium text-slate-700">{opt.label}</span>
                       </label>
-                    )}
+                    ))}
                   </div>
 
                   {formData.paymentMethod === 'upi_on_delivery' && !!shop?.upiQrUrl && (
-                    <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-gray-700 mb-2">
-                        {t('common.language') === 'hindi'
-                          ? 'डिलीवरी पर इस QR कोड को स्कैन करें'
-                          : 'Scan this QR code on delivery'}
+                    <div
+                      className="mt-4 p-4 rounded-xl text-center"
+                      style={{ background: 'var(--emerald-pale)' }}
+                    >
+                      <p className="text-xs text-emerald-700 mb-3">
+                        {isHindi ? 'डिलीवरी पर इस QR कोड को स्कैन करें' : 'Scan this QR code on delivery'}
                       </p>
-                      <img
-                        src={String(shop.upiQrUrl)}
-                        alt="UPI QR"
-                        className="w-32 h-32 mx-auto"
-                      />
+                      <img src={String(shop.upiQrUrl)} alt="UPI QR" className="w-28 h-28 mx-auto rounded-lg" />
                     </div>
                   )}
                 </div>
               )}
 
-              <button
-                type="submit"
-                className="w-full py-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
-              >
+              <button type="submit" className="btn-green w-full py-3.5 text-base rounded-2xl mt-2">
                 {t('cart.placeOrder')}
               </button>
             </form>
           </div>
         </div>
 
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{t('order.orderDetails')}</h2>
+        {/* Order summary */}
+        <div className="lg:col-span-2">
+          <div className="card p-5 sm:p-6 lg:sticky lg:top-20">
+            <h2 className="font-bold text-slate-800 text-base mb-4" style={{ fontFamily: 'Syne, sans-serif' }}>
+              {t('order.orderDetails')}
+            </h2>
 
             <div className="space-y-3 mb-4">
               {shopCartItems.map((item) => (
-                <div key={String(item.product.id)} className="flex justify-between text-sm">
-                  <span className="text-gray-600">
-                    {item.product.name} ({productFlavorLine(item.product)}) x{item.quantity}
-                  </span>
-                  <span className="font-medium text-gray-900">
+                <div key={String(item.product.id)} className="flex justify-between items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-slate-700 font-medium leading-tight">{item.product.name}</p>
+                    {productFlavorLine(item.product) && (
+                      <p className="text-xs text-slate-400">{productFlavorLine(item.product)}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-0.5">×{item.quantity}</p>
+                  </div>
+                  <span className="font-semibold text-sm text-slate-800 flex-shrink-0">
                     ₹{(Number(item.product.price) * item.quantity).toFixed(2)}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-gray-200 pt-4">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-bold text-gray-900">{t('order.total')}</span>
-                <span className="text-2xl font-bold text-blue-600">₹{total.toFixed(2)}</span>
-              </div>
+            <div className="border-t border-slate-100 pt-4 flex items-center justify-between">
+              <span className="font-bold text-slate-800 text-base">{t('order.total')}</span>
+              <span
+                className="text-2xl font-bold"
+                style={{ color: 'var(--saffron)', fontFamily: 'Syne, sans-serif' }}
+              >
+                ₹{total.toFixed(2)}
+              </span>
             </div>
           </div>
         </div>
@@ -372,4 +352,5 @@ const Checkout = () => {
     </div>
   );
 };
+
 export default Checkout;

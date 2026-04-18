@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
-import { ArrowLeft, Trash2, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Trash2, ShoppingCart, Store } from 'lucide-react';
 import { Product } from '../../types';
 
 const Cart = () => {
@@ -10,6 +10,7 @@ const Cart = () => {
   const { t } = useTranslation();
   const { cart, removeFromCart, updateCartQuantity, user } = useStore();
   const [shops, setShops] = useState<any[]>([]);
+  const isHindi = t('common.language') === 'hindi';
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -21,7 +22,6 @@ const Cart = () => {
         console.error("Error fetching shops:", err);
       }
     };
-  
     fetchShops();
   }, []);
 
@@ -43,33 +43,36 @@ const Cart = () => {
 
   const maxQuantityOptions = (product: Product, lineQty: number) => {
     const stock = Number((product as Product & { quantity?: number }).quantity);
-    const upper =
-      Number.isFinite(stock) && stock >= 0 ? Math.max(stock, lineQty) : Math.max(lineQty, 1);
+    const upper = Number.isFinite(stock) && stock >= 0 ? Math.max(stock, lineQty) : Math.max(lineQty, 1);
     return Math.min(Math.max(upper, 1), 20);
   };
 
   if (cart.length === 0) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 pb-8">
         <button
           onClick={() => router.push('/customer/shops')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl transition-colors"
+          style={{ color: 'var(--slate-mid)', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
           {t('common.back')}
         </button>
 
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-          <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('cart.emptyCart')}</h2>
-          <p className="text-gray-600 mb-6">
-            {t('common.language') === 'hindi'
-              ? 'खरीदारी शुरू करने के लिए दुकानों को ब्राउज़ करें'
-              : 'Browse shops to start shopping'}
+        <div className="card p-12 text-center">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: 'var(--saffron-pale)' }}
+          >
+            <ShoppingCart className="w-7 h-7" style={{ color: 'var(--saffron)' }} />
+          </div>
+          <h2 className="section-title text-xl mb-2">{t('cart.emptyCart')}</h2>
+          <p className="text-sm text-slate-500 mb-6">
+            {isHindi ? 'खरीदारी शुरू करने के लिए दुकानों को ब्राउज़ करें' : 'Browse shops to start shopping'}
           </p>
           <button
             onClick={() => router.push('/customer/shops')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="btn-primary"
           >
             {t('customer.browseShops')}
           </button>
@@ -85,110 +88,132 @@ const Cart = () => {
     return acc;
   }, {} as Record<string, typeof cart>);
 
-  const calculateShopTotal = (items: typeof cart) => {
-    return items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
-  };
+  const calculateShopTotal = (items: typeof cart) =>
+    items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 
   const handleCheckout = (shopId: string) => {
-    if (!user) {
-      router.push('/auth?role=customer');
-      return;
-    }
+    if (!user) { router.push('/auth?role=customer'); return; }
     router.push(`/customer/checkout/${shopId}`);
   };
 
   return (
-    <div className="space-y-6">
-      <button
-        onClick={() => router.push('/customer/shops')}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        {t('common.back')}
-      </button>
+    <div className="space-y-4 sm:space-y-6 pb-8">
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.push('/customer/shops')}
+          className="flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-xl"
+          style={{ color: 'var(--slate-mid)', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">{t('common.back')}</span>
+        </button>
+        <h1 className="section-title text-xl sm:text-2xl">{t('cart.cart')}</h1>
+      </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">{t('cart.cart')}</h1>
-
+      <div className="space-y-5">
         {Object.entries(cartByShop).map(([shopId, items]) => {
           const shop = shops.find((s) => String(s.id) === String(shopId));
           const shopTitle =
             shop?.name ??
             (shopId === 'unknown'
-              ? t('common.language') === 'hindi'
-                ? 'दुकान'
-                : 'Shop'
-              : `${t('common.language') === 'hindi' ? 'दुकान' : 'Shop'} #${shopId}`);
-
+              ? (isHindi ? 'दुकान' : 'Shop')
+              : `${isHindi ? 'दुकान' : 'Shop'} #${shopId}`);
           const total = calculateShopTotal(items);
 
           return (
-            <div key={shopId} className="mb-8 last:mb-0">
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900">{shopTitle}</h2>
+            <div key={shopId} className="card overflow-hidden">
+              {/* Shop header */}
+              <div
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4"
+                style={{ background: 'var(--saffron-pale)', borderBottom: '1px solid rgba(255,107,53,0.15)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <Store className="w-4 h-4" style={{ color: 'var(--saffron)' }} />
+                  <h2 className="font-bold text-slate-800 text-base" style={{ fontFamily: 'Syne, sans-serif' }}>
+                    {shopTitle}
+                  </h2>
+                </div>
                 <button
                   onClick={() => handleCheckout(shopId)}
                   disabled={shopId === 'unknown'}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className="btn-green text-sm py-2 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                 >
-                  {t('cart.checkout')} (₹{total.toFixed(2)})
+                  {t('cart.checkout')} · ₹{total.toFixed(2)}
                 </button>
               </div>
 
-              <div className="space-y-4">
-                {items.map((item) => (
-                  <div
-                    key={String(item.product.id)}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      {productImageUrl(item.product) ? (
+              {/* Items */}
+              <div className="divide-y divide-slate-50">
+                {items.map((item) => {
+                  const imgUrl = productImageUrl(item.product);
+                  const flavor = productFlavor(item.product);
+                  return (
+                    <div
+                      key={String(item.product.id)}
+                      className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5"
+                    >
+                      {imgUrl && (
                         <img
-                          src={productImageUrl(item.product)}
+                          src={imgUrl}
                           alt={item.product.name}
-                          className="w-16 h-16 rounded-lg object-cover"
+                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover flex-shrink-0"
                         />
-                      ) : null}
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{item.product.name}</h3>
-                        <p className="text-sm text-gray-600">{productFlavor(item.product)}</p>
-                        <p className="font-semibold text-gray-900 mt-1">₹{item.product.price}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <select
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateCartQuantity(String(item.product.id), parseInt(e.target.value, 10))
-                        }
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        {Array.from(
-                          { length: maxQuantityOptions(item.product, item.quantity) },
-                          (_, i) => i + 1
-                        ).map((num) => (
-                          <option key={num} value={num}>
-                            {num}
-                          </option>
-                        ))}
-                      </select>
-
-                      <div className="text-right min-w-[80px]">
-                        <p className="font-bold text-gray-900">
-                          ₹{(item.product.price * item.quantity).toFixed(2)}
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-800 text-sm leading-tight">{item.product.name}</h3>
+                        {flavor && <p className="text-xs text-slate-500 mt-0.5">{flavor}</p>}
+                        <p className="font-bold text-sm mt-1" style={{ color: 'var(--saffron)' }}>
+                          ₹{item.product.price}
                         </p>
                       </div>
 
-                      <button
-                        onClick={() => removeFromCart(String(item.product.id))}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <select
+                          value={item.quantity}
+                          onChange={(e) =>
+                            updateCartQuantity(String(item.product.id), parseInt(e.target.value, 10))
+                          }
+                          className="px-2 py-1.5 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 focus:outline-none"
+                          style={{ background: 'white' }}
+                        >
+                          {Array.from(
+                            { length: maxQuantityOptions(item.product, item.quantity) },
+                            (_, i) => i + 1
+                          ).map((num) => (
+                            <option key={num} value={num}>{num}</option>
+                          ))}
+                        </select>
+
+                        <div className="text-right hidden sm:block min-w-[60px]">
+                          <p className="font-bold text-sm text-slate-800">
+                            ₹{(item.product.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => removeFromCart(String(item.product.id))}
+                          className="p-1.5 rounded-lg transition-colors"
+                          style={{ color: '#EF4444', background: '#FEF2F2' }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
+              </div>
+
+              {/* Total bar */}
+              <div
+                className="flex items-center justify-between px-5 py-3 border-t border-slate-100"
+                style={{ background: '#FAFAFA' }}
+              >
+                <span className="text-sm text-slate-500 font-medium">
+                  {items.length} {isHindi ? 'वस्तुएं' : 'items'}
+                </span>
+                <span className="font-bold text-base text-slate-800">
+                  {t('order.total')}: ₹{total.toFixed(2)}
+                </span>
               </div>
             </div>
           );
@@ -197,4 +222,5 @@ const Cart = () => {
     </div>
   );
 };
+
 export default Cart;
