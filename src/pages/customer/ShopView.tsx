@@ -3,7 +3,7 @@ import { useParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
-import { ArrowLeft, ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Plus, Minus, Store, MapPin, Truck, ShoppingBag } from 'lucide-react';
 import { Product } from '../../types';
 
 function normalizeRouteShopId(params: ReturnType<typeof useParams>): string | undefined {
@@ -28,12 +28,7 @@ const ShopView = () => {
   }, [shopId]);
 
   useEffect(() => {
-    if (!shopId) {
-      setShop(null);
-      setShopLoading(false);
-      return;
-    }
-
+    if (!shopId) { setShop(null); setShopLoading(false); return; }
     const fetchShop = async () => {
       setShopLoading(true);
       try {
@@ -48,16 +43,11 @@ const ShopView = () => {
         setShopLoading(false);
       }
     };
-
     fetchShop();
   }, [shopId]);
 
   useEffect(() => {
-    if (!shopId) {
-      setProducts([]);
-      return;
-    }
-
+    if (!shopId) { setProducts([]); return; }
     const fetchProducts = async () => {
       const url = `http://localhost:5000/api/products/${shopId}`;
       try {
@@ -71,18 +61,18 @@ const ShopView = () => {
         setProducts([]);
       }
     };
-
     fetchProducts();
   }, [shopId]);
 
   const shopProducts = products;
+  const isHindi = t('common.language') === 'hindi';
 
   if (!shopId) {
     return (
-      <div className="text-center py-12">
-        <p className="text-gray-500">
-          {t('common.language') === 'hindi' ? 'अमान्य दुकान लिंक' : 'Invalid shop link'}
-        </p>
+      <div className="flex items-center justify-center py-20">
+        <div className="card p-8 text-center max-w-xs mx-auto">
+          <p className="text-slate-500">{isHindi ? 'अमान्य दुकान लिंक' : 'Invalid shop link'}</p>
+        </div>
       </div>
     );
   }
@@ -101,159 +91,275 @@ const ShopView = () => {
     setQuantities({ ...quantities, [product.id]: 0 });
   };
 
+  const isDelivery = (shop?.serviceType ?? shop?.service_type) === 'delivery';
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 pb-8">
+      {/* Top bar */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push('/customer/shops')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          className="flex items-center gap-2 text-sm font-medium transition-colors px-3 py-2 rounded-xl"
+          style={{ color: 'var(--slate-mid)', background: 'white', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
         >
-          <ArrowLeft className="w-5 h-5" />
-          {t('common.back')}
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">{t('common.back')}</span>
         </button>
 
         {cartItemCount > 0 && (
           <button
             onClick={() => router.push('/customer/cart')}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all active:scale-95"
+            style={{ background: 'var(--emerald)', boxShadow: '0 2px 8px rgba(5,150,105,0.3)' }}
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingCart className="w-4 h-4" />
             {t('cart.cart')} ({cartItemCount})
           </button>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-8">
+      {/* Shop info card */}
+      <div className="card p-5 sm:p-7">
         {shopLoading ? (
-          <p className="text-gray-500">{t('common.language') === 'hindi' ? 'लोड हो रहा है…' : 'Loading shop…'}</p>
+          <div className="space-y-3">
+            <div className="h-7 w-48 rounded-lg bg-slate-100 pulse-soft" />
+            <div className="h-4 w-64 rounded-lg bg-slate-100 pulse-soft" />
+          </div>
         ) : shop ? (
-          <>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">{shop.name}</h1>
-            <p className="text-gray-600 mb-4">{shop.address}</p>
-            <div className="flex gap-2">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                {shop.type
-                  ? shop.type.charAt(0).toUpperCase() + shop.type.slice(1)
-                  : ''}
-              </span>
-              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                {(shop.serviceType ?? shop.service_type) === 'delivery'
-                  ? t('shop.delivery')
-                  : t('shop.takeout')}
-              </span>
+          <div className="flex items-start gap-4">
+            <div
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ background: 'var(--saffron-pale)' }}
+            >
+              <Store className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'var(--saffron)' }} />
             </div>
-          </>
+            <div className="flex-1 min-w-0">
+              <h1
+                className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"
+                style={{ fontFamily: 'Syne, sans-serif' }}
+              >
+                {shop.name}
+              </h1>
+              <div className="flex items-start gap-1.5 mt-1 mb-3">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-slate-500">{shop.address}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="badge badge-blue capitalize">
+                  {shop.type ? shop.type.charAt(0).toUpperCase() + shop.type.slice(1) : ''}
+                </span>
+                <span
+                  className="badge"
+                  style={
+                    isDelivery
+                      ? { background: 'var(--emerald-pale)', color: 'var(--emerald)' }
+                      : { background: 'var(--saffron-pale)', color: 'var(--saffron)' }
+                  }
+                >
+                  {isDelivery
+                    ? <><Truck className="w-3 h-3 mr-1" />{t('shop.delivery')}</>
+                    : <><ShoppingBag className="w-3 h-3 mr-1" />{t('shop.takeout')}</>
+                  }
+                </span>
+              </div>
+            </div>
+          </div>
         ) : (
-          <p className="text-gray-500">
-            {t('common.language') === 'hindi'
+          <p className="text-slate-500 text-sm">
+            {isHindi
               ? `दुकान #${shopId} सूची में नहीं मिली — उत्पाद नीचे दिख सकते हैं`
               : `Shop #${shopId} was not found in the directory — products below may still load.`}
           </p>
         )}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('shop.products')}</h2>
+      {/* Products */}
+      <div className="card p-5 sm:p-7">
+        <h2
+          className="text-xl sm:text-2xl font-bold text-slate-800 mb-5"
+          style={{ fontFamily: 'Syne, sans-serif' }}
+        >
+          {t('shop.products')}
+        </h2>
 
         {shopProducts.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            {t('common.language') === 'hindi'
-              ? 'इस दुकान में अभी कोई उत्पाद उपलब्ध नहीं है'
-              : 'No products available in this shop yet'}
-          </p>
+          <div className="text-center py-12">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
+              style={{ background: '#F8FAFC' }}
+            >
+              <ShoppingBag className="w-6 h-6 text-slate-400" />
+            </div>
+            <p className="text-slate-500 text-sm">
+              {isHindi
+                ? 'इस दुकान में अभी कोई उत्पाद उपलब्ध नहीं है'
+                : 'No products available in this shop yet'}
+            </p>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {t('product.name')}
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {t('product.flavor')}
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {t('product.price')}
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {t('product.quantity')}
-                  </th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                    {t('common.language') === 'hindi' ? 'कार्ट में जोड़ें' : 'Add to Cart'}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {shopProducts.map((product) => {
-                  const quantity = quantities[product.id] || 0;
-                  return (
-                    <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          {product.imageUrl && (
-                            <img
-                              src={product.imageUrl}
-                              alt={product.name}
-                              className="w-12 h-12 rounded-lg object-cover"
-                            />
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="table-base w-full">
+                <thead>
+                  <tr>
+                    <th>{t('product.name')}</th>
+                    <th>{t('product.flavor')}</th>
+                    <th>{t('product.price')}</th>
+                    <th>{t('product.quantity')}</th>
+                    <th>{isHindi ? 'कार्ट में जोड़ें' : 'Add to Cart'}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shopProducts.map((product) => {
+                    const quantity = quantities[product.id] || 0;
+                    return (
+                      <tr key={product.id}>
+                        <td>
+                          <div className="flex items-center gap-3">
+                            {product.imageUrl && (
+                              <img
+                                src={product.imageUrl}
+                                alt={product.name}
+                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                              />
+                            )}
+                            <span className="font-semibold text-slate-800">{product.name}</span>
+                          </div>
+                        </td>
+                        <td className="text-slate-500">{product.flavor}</td>
+                        <td className="font-bold text-slate-800">₹{product.price}</td>
+                        <td>
+                          {product.quantity > 0 ? (
+                            <span className="badge badge-green">{product.quantity}</span>
+                          ) : (
+                            <span className="badge badge-red">
+                              {isHindi ? 'स्टॉक में नहीं' : 'Out of stock'}
+                            </span>
                           )}
-                          <span className="font-medium text-gray-900">{product.name}</span>
+                        </td>
+                        <td>
+                          {product.quantity > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center rounded-xl overflow-hidden border border-slate-200">
+                                <button
+                                  onClick={() => handleQuantityChange(product.id, -1)}
+                                  className="p-1.5 hover:bg-slate-50 transition-colors"
+                                  disabled={quantity === 0}
+                                >
+                                  <Minus className="w-3.5 h-3.5 text-slate-600" />
+                                </button>
+                                <span className="w-8 text-center text-sm font-semibold text-slate-700">
+                                  {quantity}
+                                </span>
+                                <button
+                                  onClick={() => handleQuantityChange(product.id, 1)}
+                                  className="p-1.5 hover:bg-slate-50 transition-colors"
+                                  disabled={quantity >= product.quantity}
+                                >
+                                  <Plus className="w-3.5 h-3.5 text-slate-600" />
+                                </button>
+                              </div>
+                              <button
+                                onClick={() => handleAddToCart(product)}
+                                disabled={quantity === 0}
+                                className="px-3 py-1.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                                style={{ background: quantity > 0 ? 'var(--saffron)' : '#CBD5E1' }}
+                              >
+                                {t('cart.addToCart')}
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-slate-400">
+                              {isHindi ? 'उपलब्ध नहीं' : 'Unavailable'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile cards */}
+            <div className="md:hidden space-y-3">
+              {shopProducts.map((product) => {
+                const quantity = quantities[product.id] || 0;
+                const inStock = product.quantity > 0;
+                return (
+                  <div
+                    key={product.id}
+                    className="flex items-start gap-3 p-4 rounded-2xl border border-slate-100"
+                    style={{ background: '#FAFAFA' }}
+                  >
+                    {product.imageUrl && (
+                      <img
+                        src={product.imageUrl}
+                        alt={product.name}
+                        className="w-14 h-14 rounded-xl object-cover flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-800 text-sm leading-tight">{product.name}</p>
+                          {product.flavor && (
+                            <p className="text-xs text-slate-500 mt-0.5">{product.flavor}</p>
+                          )}
                         </div>
-                      </td>
-                      <td className="py-4 px-4 text-gray-700">{product.flavor}</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹{product.price}</td>
-                      <td className="py-4 px-4 text-gray-700">
-                        {product.quantity > 0 ? (
-                          <span className="text-green-600">{product.quantity}</span>
+                        <p className="font-bold text-slate-800 text-sm flex-shrink-0">₹{product.price}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-2.5">
+                        {inStock ? (
+                          <span className="text-xs text-emerald-600 font-medium">
+                            {product.quantity} {isHindi ? 'उपलब्ध' : 'in stock'}
+                          </span>
                         ) : (
-                          <span className="text-red-600">
-                            {t('common.language') === 'hindi' ? 'स्टॉक में नहीं' : 'Out of stock'}
+                          <span className="text-xs text-red-500 font-medium">
+                            {isHindi ? 'स्टॉक में नहीं' : 'Out of stock'}
                           </span>
                         )}
-                      </td>
-                      <td className="py-4 px-4">
-                        {product.quantity > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 border border-gray-300 rounded-lg">
+                        {inStock && (
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex items-center rounded-lg overflow-hidden border border-slate-200 bg-white">
                               <button
                                 onClick={() => handleQuantityChange(product.id, -1)}
-                                className="p-2 hover:bg-gray-100 transition-colors"
+                                className="px-2 py-1 text-slate-600 active:bg-slate-100"
                                 disabled={quantity === 0}
                               >
-                                <Minus className="w-4 h-4" />
+                                <Minus className="w-3 h-3" />
                               </button>
-                              <span className="w-8 text-center font-medium">{quantity}</span>
+                              <span className="w-6 text-center text-xs font-bold text-slate-700">{quantity}</span>
                               <button
                                 onClick={() => handleQuantityChange(product.id, 1)}
-                                className="p-2 hover:bg-gray-100 transition-colors"
+                                className="px-2 py-1 text-slate-600 active:bg-slate-100"
                                 disabled={quantity >= product.quantity}
                               >
-                                <Plus className="w-4 h-4" />
+                                <Plus className="w-3 h-3" />
                               </button>
                             </div>
                             <button
                               onClick={() => handleAddToCart(product)}
                               disabled={quantity === 0}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all disabled:opacity-40 active:scale-95"
+                              style={{ background: quantity > 0 ? 'var(--saffron)' : '#CBD5E1' }}
                             >
-                              {t('cart.addToCart')}
+                              {isHindi ? 'जोड़ें' : 'Add'}
                             </button>
                           </div>
-                        ) : (
-                          <span className="text-gray-400">
-                            {t('common.language') === 'hindi' ? 'उपलब्ध नहीं' : 'Unavailable'}
-                          </span>
                         )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
   );
 };
+
 export default ShopView;

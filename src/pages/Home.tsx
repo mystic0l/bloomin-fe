@@ -2,91 +2,138 @@ import { useRouter } from 'next/navigation';
 import { useTranslation } from '../hooks/useTranslation';
 import { Store, ShoppingBag, Truck, QrCode, Bell, Smartphone } from 'lucide-react';
 
- const Home = () => {
+const Home = () => {
   const router = useRouter();
   const { t } = useTranslation();
 
+  const isHindi = t('common.language') === 'hindi';
+
   return (
-    <div className="space-y-16">
-      <section className="text-center py-20">
-        <h1 className="text-5xl font-bold text-gray-900 mb-6">
-          {t('common.language') === 'hindi'
-            ? 'अपने व्यवसाय को डिजिटल बनाएं'
-            : 'Digitise Your Business'}
-        </h1>
-        <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">
-          {t('common.language') === 'hindi'
-            ? 'अपनी दुकान को ऑनलाइन लाएं, ऑर्डर प्राप्त करें, और अपने ग्राहकों से जुड़ें'
-            : 'Bring your shop online, receive orders, and connect with customers'}
-        </p>
+    <div className="space-y-12 sm:space-y-20 pb-8">
+      {/* ── Hero ── */}
+      <section className="relative pt-8 sm:pt-16 pb-10 sm:pb-20 text-center overflow-hidden">
+        {/* Background decoration */}
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-10 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, var(--saffron) 0%, transparent 70%)',
+          }}
+        />
 
-        <div className="flex flex-col sm:flex-row gap-6 justify-center">
-          <button
-            onClick={() => router.push('/auth?role=shopkeeper')}
-            className="flex items-center justify-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-xl font-semibold text-lg hover:bg-blue-700 transform hover:scale-105 transition-all shadow-lg"
-          >
-            <Store className="w-6 h-6" />
-            {t('auth.iAmShopkeeper')}
-          </button>
+        <div className="relative z-10 max-w-3xl mx-auto px-4">
+          {/* Pill label */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-6 fade-up"
+            style={{ background: 'var(--saffron-pale)', color: 'var(--saffron)' }}>
+            <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: 'var(--saffron)' }} />
+            {isHindi ? 'आपकी दुकान, डिजिटल तरीके से' : 'Your Shop, Digital Way'}
+          </div>
 
-          <button
-            onClick={() => router.push('/auth?role=customer')}
-            className="flex items-center justify-center gap-3 px-8 py-4 bg-green-600 text-white rounded-xl font-semibold text-lg hover:bg-green-700 transform hover:scale-105 transition-all shadow-lg"
+          <h1
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-800 mb-5 leading-tight fade-up"
+            style={{ fontFamily: 'Syne, sans-serif', animationDelay: '0.05s' }}
           >
-            <ShoppingBag className="w-6 h-6" />
-            {t('auth.iAmCustomer')}
-          </button>
+            {isHindi ? (
+              <>अपने व्यवसाय को <span className="gradient-text">डिजिटल</span> बनाएं</>
+            ) : (
+              <>Digitise Your <span className="gradient-text">Business</span></>
+            )}
+          </h1>
+
+          <p
+            className="text-base sm:text-lg text-slate-500 mb-10 max-w-xl mx-auto leading-relaxed fade-up"
+            style={{ animationDelay: '0.1s' }}
+          >
+            {isHindi
+              ? 'अपनी दुकान को ऑनलाइन लाएं, ऑर्डर प्राप्त करें, और अपने ग्राहकों से जुड़ें'
+              : 'Bring your shop online, receive orders, and connect with customers effortlessly'}
+          </p>
+
+          <div
+            className="flex flex-col sm:flex-row gap-4 justify-center fade-up"
+            style={{ animationDelay: '0.15s' }}
+          >
+            <button
+              onClick={() => router.push('/auth?role=shopkeeper')}
+              className="btn-primary text-base px-7 py-3.5 rounded-2xl w-full sm:w-auto"
+            >
+              <Store className="w-5 h-5" />
+              {t('auth.iAmShopkeeper')}
+            </button>
+            <button
+              onClick={() => router.push('/auth?role=customer')}
+              className="btn-green text-base px-7 py-3.5 rounded-2xl w-full sm:w-auto"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {t('auth.iAmCustomer')}
+            </button>
+          </div>
         </div>
       </section>
 
-      <section className="grid md:grid-cols-3 gap-8">
-        <FeatureCard
-          icon={<Store className="w-12 h-12 text-blue-600" />}
-          title={t('common.language') === 'hindi' ? 'त्वरित सेटअप' : 'Quick Setup'}
-          description={t('common.language') === 'hindi'
-            ? '6-7 सवालों में अपनी दुकान तैयार करें'
-            : 'Set up your shop in 6-7 simple questions'}
-        />
+      {/* ── Features ── */}
+      <section className="px-1">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2
+            className="text-2xl sm:text-3xl font-bold text-slate-800"
+            style={{ fontFamily: 'Syne, sans-serif' }}
+          >
+            {isHindi ? 'सब कुछ एक जगह' : 'Everything in One Place'}
+          </h2>
+          <p className="text-slate-500 mt-2 text-sm sm:text-base">
+            {isHindi ? 'दुकान चलाना अब और भी आसान' : 'Running your shop has never been easier'}
+          </p>
+        </div>
 
-        <FeatureCard
-          icon={<QrCode className="w-12 h-12 text-blue-600" />}
-          title={t('common.language') === 'hindi' ? 'QR कोड' : 'QR Code'}
-          description={t('common.language') === 'hindi'
-            ? 'ग्राहकों के लिए QR कोड जनरेट करें'
-            : 'Generate QR code for customers to scan'}
-        />
-
-        <FeatureCard
-          icon={<Bell className="w-12 h-12 text-blue-600" />}
-          title={t('common.language') === 'hindi' ? 'इंस्टेंट नोटिफिकेशन' : 'Instant Notifications'}
-          description={t('common.language') === 'hindi'
-            ? 'नए ऑर्डर की तुरंत सूचना पाएं'
-            : 'Get notified instantly when orders arrive'}
-        />
-
-        <FeatureCard
-          icon={<Truck className="w-12 h-12 text-blue-600" />}
-          title={t('common.language') === 'hindi' ? 'ऑर्डर ट्रैकिंग' : 'Order Tracking'}
-          description={t('common.language') === 'hindi'
-            ? 'ऑर्डर स्टेटस ट्रैक करें और अपडेट करें'
-            : 'Track and update order status in real-time'}
-        />
-
-        <FeatureCard
-          icon={<Smartphone className="w-12 h-12 text-blue-600" />}
-          title={t('common.language') === 'hindi' ? 'मोबाइल फ्रेंडली' : 'Mobile Friendly'}
-          description={t('common.language') === 'hindi'
-            ? 'किसी भी डिवाइस से एक्सेस करें'
-            : 'Access from any device, anywhere'}
-        />
-
-        <FeatureCard
-          icon={<ShoppingBag className="w-12 h-12 text-blue-600" />}
-          title={t('common.language') === 'hindi' ? 'आसान ऑर्डरिंग' : 'Easy Ordering'}
-          description={t('common.language') === 'hindi'
-            ? 'ग्राहक आसानी से ऑर्डर कर सकते हैं'
-            : 'Customers can place orders with ease'}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          <FeatureCard
+            icon={<Store className="w-6 h-6" style={{ color: 'var(--saffron)' }} />}
+            iconBg="var(--saffron-pale)"
+            title={isHindi ? 'त्वरित सेटअप' : 'Quick Setup'}
+            description={isHindi
+              ? '6-7 सवालों में अपनी दुकान तैयार करें'
+              : 'Set up your shop in 6-7 simple questions'}
+          />
+          <FeatureCard
+            icon={<QrCode className="w-6 h-6" style={{ color: 'var(--emerald)' }} />}
+            iconBg="var(--emerald-pale)"
+            title={isHindi ? 'QR कोड' : 'QR Code'}
+            description={isHindi
+              ? 'ग्राहकों के लिए QR कोड जनरेट करें'
+              : 'Generate QR code for customers to scan'}
+          />
+          <FeatureCard
+            icon={<Bell className="w-6 h-6" style={{ color: '#7C3AED' }} />}
+            iconBg="#F5F3FF"
+            title={isHindi ? 'इंस्टेंट नोटिफिकेशन' : 'Instant Notifications'}
+            description={isHindi
+              ? 'नए ऑर्डर की तुरंत सूचना पाएं'
+              : 'Get notified instantly when orders arrive'}
+          />
+          <FeatureCard
+            icon={<Truck className="w-6 h-6" style={{ color: '#0284C7' }} />}
+            iconBg="#F0F9FF"
+            title={isHindi ? 'ऑर्डर ट्रैकिंग' : 'Order Tracking'}
+            description={isHindi
+              ? 'ऑर्डर स्टेटस ट्रैक करें और अपडेट करें'
+              : 'Track and update order status in real-time'}
+          />
+          <FeatureCard
+            icon={<Smartphone className="w-6 h-6" style={{ color: '#D97706' }} />}
+            iconBg="#FFFBEB"
+            title={isHindi ? 'मोबाइल फ्रेंडली' : 'Mobile Friendly'}
+            description={isHindi
+              ? 'किसी भी डिवाइस से एक्सेस करें'
+              : 'Access from any device, anywhere'}
+          />
+          <FeatureCard
+            icon={<ShoppingBag className="w-6 h-6" style={{ color: '#DB2777' }} />}
+            iconBg="#FDF2F8"
+            title={isHindi ? 'आसान ऑर्डरिंग' : 'Easy Ordering'}
+            description={isHindi
+              ? 'ग्राहक आसानी से ऑर्डर कर सकते हैं'
+              : 'Customers can place orders with ease'}
+          />
+        </div>
       </section>
     </div>
   );
@@ -94,15 +141,28 @@ import { Store, ShoppingBag, Truck, QrCode, Bell, Smartphone } from 'lucide-reac
 
 interface FeatureCardProps {
   icon: React.ReactNode;
+  iconBg: string;
   title: string;
   description: string;
 }
 
-const FeatureCard = ({ icon, title, description }: FeatureCardProps) => (
-  <div className="bg-white p-8 rounded-2xl shadow-md hover:shadow-xl transition-shadow">
-    <div className="mb-4">{icon}</div>
-    <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-    <p className="text-gray-600">{description}</p>
+const FeatureCard = ({ icon, iconBg, title, description }: FeatureCardProps) => (
+  <div className="card p-5 sm:p-6 flex gap-4 items-start">
+    <div
+      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+      style={{ background: iconBg }}
+    >
+      {icon}
+    </div>
+    <div>
+      <h3
+        className="text-base font-bold text-slate-800 mb-1"
+        style={{ fontFamily: 'Syne, sans-serif' }}
+      >
+        {title}
+      </h3>
+      <p className="text-sm text-slate-500 leading-relaxed">{description}</p>
+    </div>
   </div>
 );
 
