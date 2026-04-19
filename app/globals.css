@@ -20,6 +20,232 @@
   --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.08), 0 12px 32px rgba(0,0,0,0.1);
 }
 
+/* ── Dark theme overrides ── */
+html.dark {
+  --saffron-pale: #3D1F12;
+  --emerald-pale: #052e1c;
+  --cream: #0F1117;
+  --warm-white: #161920;
+  --slate-deep: #F1F5F9;
+  --slate-mid: #CBD5E1;
+  --slate-soft: #64748B;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.3);
+  --card-shadow-hover: 0 4px 8px rgba(0,0,0,0.4), 0 12px 32px rgba(0,0,0,0.4);
+}
+
+
+
+/* Dark mode: page & card backgrounds */
+html.dark body { background-color: #0F1117; color: #F1F5F9; }
+html.dark .card { background: #1A1D27; }
+html.dark nav  { background: rgba(20,22,32,0.97) !important; border-color: #2E3347 !important; }
+
+/* Inputs */
+html.dark .input-base {
+  background: #1E2130;
+  border-color: #2E3347;
+  color: #F1F5F9;
+}
+html.dark .input-base::placeholder { color: #64748B; }
+html.dark .input-base:focus {
+  border-color: var(--saffron);
+  box-shadow: 0 0 0 3px rgba(255,107,53,0.18);
+}
+
+/* Headings & body text */
+html.dark h1, html.dark h2, html.dark h3,
+html.dark h4, html.dark h5, html.dark h6,
+html.dark .section-title { color: #F1F5F9; }
+html.dark p   { color: #CBD5E1; }
+
+/* Slate utility colour fixes — all bumped high enough for dark backgrounds */
+html.dark .text-slate-800 { color: #F1F5F9 !important; }
+html.dark .text-slate-700 { color: #E2E8F0 !important; }
+html.dark .text-slate-600 { color: #CBD5E1 !important; }
+html.dark .text-slate-500 { color: #B0BCCC !important; }
+html.dark .text-slate-400 { color: #8896AA !important; }
+
+/* span, label, small text — make sure no dark-gray text on dark bg */
+html.dark span   { color: inherit; }
+html.dark label  { color: #CBD5E1; }
+html.dark small  { color: #B0BCCC; }
+
+/* Explicit class-based text that sits inside muted-bg containers */
+html.dark .text-xs   { color: inherit; }
+html.dark .font-medium { color: inherit; }
+html.dark .font-semibold { color: inherit; }
+html.dark .font-bold   { color: inherit; }
+
+/* Force all text inside inline-bg containers to be visible */
+html.dark [style*="background: #FAFAFA"] *,
+html.dark [style*="background: #F8FAFC"] *,
+html.dark [style*="background: #F1F5F9"] * { color: #E2E8F0 !important; }
+
+/* But preserve intentional accent colours inside those containers */
+html.dark [style*="background: #FAFAFA"] [style*="color: var(--saffron)"],
+html.dark [style*="background: #F8FAFC"] [style*="color: var(--saffron)"],
+html.dark [style*="background: #F1F5F9"] [style*="color: var(--saffron)"] { color: var(--saffron) !important; }
+html.dark [style*="background: #FAFAFA"] [style*="color: var(--emerald)"],
+html.dark [style*="background: #F8FAFC"] [style*="color: var(--emerald)"],
+html.dark [style*="background: #F1F5F9"] [style*="color: var(--emerald)"] { color: var(--emerald) !important; }
+html.dark [style*="background: #FAFAFA"] [style*="color: #EF4444"],
+html.dark [style*="background: #F8FAFC"] [style*="color: #EF4444"],
+html.dark [style*="background: #F1F5F9"] [style*="color: #EF4444"] { color: #FCA5A5 !important; }
+
+/* Background utilities */
+html.dark .bg-white { background: #1A1D27 !important; }
+
+/* Inline style overrides — light backgrounds to dark equivalents */
+html.dark [style*="background: white"]    { background: #1A1D27 !important; color: #F1F5F9 !important; }
+html.dark [style*="background: white"] *  { color: #E2E8F0 !important; }
+html.dark [style*="background: #FAFAFA"] { background: #1E2130 !important; color: #E2E8F0 !important; }
+html.dark [style*="background: #F8FAFC"] { background: #1E2130 !important; color: #E2E8F0 !important; }
+html.dark [style*="background: #F1F5F9"] { background: #252836 !important; color: #E2E8F0 !important; }
+html.dark [style*="background: #FFFBEB"] { background: #2d2000 !important; color: #FCD34D !important; }
+html.dark [style*="background: #EFF6FF"] { background: #1e3a5f !important; color: #93C5FD !important; }
+html.dark [style*="background: #F5F3FF"] { background: #1e1040 !important; color: #C4B5FD !important; }
+html.dark [style*="background: #FEF2F2"] { background: #2d0a0a !important; color: #FCA5A5 !important; }
+
+/* Re-allow accent colours inside those containers so badges/prices stay coloured */
+html.dark [style*="background: white"] [style*="color: var(--saffron)"],
+html.dark [style*="background: #FAFAFA"] [style*="color: var(--saffron)"],
+html.dark [style*="background: #F8FAFC"] [style*="color: var(--saffron)"],
+html.dark [style*="background: #F1F5F9"] [style*="color: var(--saffron)"] { color: var(--saffron) !important; }
+
+html.dark [style*="background: white"] [style*="color: var(--emerald)"],
+html.dark [style*="background: #FAFAFA"] [style*="color: var(--emerald)"],
+html.dark [style*="background: #F8FAFC"] [style*="color: var(--emerald)"],
+html.dark [style*="background: #F1F5F9"] [style*="color: var(--emerald)"] { color: var(--emerald) !important; }
+
+html.dark [style*="background: white"] [style*="color: #EF4444"],
+html.dark [style*="background: #FAFAFA"] [style*="color: #EF4444"],
+html.dark [style*="background: #F8FAFC"] [style*="color: #EF4444"],
+html.dark [style*="background: #F1F5F9"] [style*="color: #EF4444"] { color: #FCA5A5 !important; }
+
+/* Product/order row muted backgrounds (extra specificity) */
+html.dark .card [style*="background: #FAFAFA"],
+html.dark .card [style*="background: #F8FAFC"] { background: #1E2130 !important; }
+
+/* Children of muted containers — override Tailwind !important slate classes */
+html.dark [style*="background: #FAFAFA"] .text-slate-800,
+html.dark [style*="background: #F8FAFC"] .text-slate-800,
+html.dark [style*="background: #F1F5F9"] .text-slate-800,
+html.dark [style*="background: white"]   .text-slate-800 { color: #F1F5F9 !important; }
+
+html.dark [style*="background: #FAFAFA"] .text-slate-700,
+html.dark [style*="background: #F8FAFC"] .text-slate-700,
+html.dark [style*="background: #F1F5F9"] .text-slate-700,
+html.dark [style*="background: white"]   .text-slate-700 { color: #E2E8F0 !important; }
+
+html.dark [style*="background: #FAFAFA"] .text-slate-600,
+html.dark [style*="background: #F8FAFC"] .text-slate-600,
+html.dark [style*="background: #F1F5F9"] .text-slate-600,
+html.dark [style*="background: white"]   .text-slate-600 { color: #CBD5E1 !important; }
+
+html.dark [style*="background: #FAFAFA"] .text-slate-500,
+html.dark [style*="background: #F8FAFC"] .text-slate-500,
+html.dark [style*="background: #F1F5F9"] .text-slate-500,
+html.dark [style*="background: white"]   .text-slate-500 { color: #B0BCCC !important; }
+
+html.dark [style*="background: #FAFAFA"] .text-slate-400,
+html.dark [style*="background: #F8FAFC"] .text-slate-400,
+html.dark [style*="background: #F1F5F9"] .text-slate-400,
+html.dark [style*="background: white"]   .text-slate-400 { color: #8896AA !important; }
+
+/* Border colours */
+html.dark .border-slate-100  { border-color: #2E3347 !important; }
+html.dark .border-slate-200  { border-color: #2E3347 !important; }
+html.dark .divide-slate-50 > * { border-color: #2E3347 !important; }
+
+/* Nav links */
+html.dark .nav-link { color: #CBD5E1; }
+html.dark .nav-link:hover { background: var(--saffron-pale); color: var(--saffron); }
+
+/* Select inside orders tab */
+html.dark select { background: #1E2130; color: #F1F5F9; border-color: #2E3347; }
+html.dark option { background: #1A1D27; color: #F1F5F9; }
+
+/* Textarea */
+html.dark textarea { background: #1E2130; color: #F1F5F9; }
+
+/* Table */
+html.dark .table-base thead tr { border-color: #2E3347; }
+html.dark .table-base tbody tr { border-color: #252836; }
+html.dark .table-base tbody tr:hover { background: #1E2130; }
+
+/* ─────────────────────────────────────────────────── */
+/*  🔒 Dark‑Mode Safety Net – ensure nothing slips     */
+/* ─────────────────────────────────────────────────── */
+
+/* 1️⃣ Force all light Tailwind background utilities to dark */
+html.dark .bg-white,
+html.dark .bg-gray-50,
+html.dark .bg-gray-100,
+html.dark .bg-gray-200,
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark .bg-zinc-50,
+html.dark .bg-neutral-50,
+html.dark .bg-stone-50 {
+  background-color: #1A1D27 !important;
+  color: #F1F5F9 !important;
+}
+
+/* 2️⃣ Catch inline light backgrounds (hex codes #f0f0f0 … #ffffff) */
+html.dark [style*="background:"]:not([style*="background: #1"]):not([style*="background: #0"]):not([style*="background: #2"]):not([style*="background: #3"]):not([style*="background: #4"]):not([style*="background: #5"]):not([style*="background: #6"]):not([style*="background: #7"]):not([style*="background: #8"]):not([style*="background: #9"]):not([style*="background: #a"]):not([style*="background: #b"]):not([style*="background: #c"]):not([style*="background: #d"]):not([style*="background: #e"]):not([style*="background: #f"]) {
+  background-color: #1E2130 !important;
+  color: #E2E8F0 !important;
+}
+
+/* 3️⃣ Make sure any text inside these forced‑dark containers stays readable */
+html.dark .bg-white *,
+html.dark .bg-gray-50 *,
+html.dark .bg-gray-100 *,
+html.dark .bg-slate-50 *,
+html.dark [style*="background: #FAFAFA"] *,
+html.dark [style*="background: #F8FAFC"] *,
+html.dark [style*="background: #F1F5F9"] * {
+  color: #E2E8F0 !important;
+}
+
+/* But preserve accent colours (Saffron, Emerald, Red) inside those containers */
+html.dark .bg-white [class*="text-"]:is([class*="saffron"], [class*="emerald"], [class*="red"]),
+html.dark .bg-gray-50 [class*="text-"]:is([class*="saffron"], [class*="emerald"], [class*="red"]) {
+  color: inherit !important; /* or specific variables */
+}
+
+/* 4️⃣ Stronger focus ring for inputs and buttons */
+html.dark .input-base:focus {
+  box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.25) !important;
+}
+
+html.dark .btn-primary:focus-visible,
+html.dark .btn-green:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 2px;
+}
+
+/* 5️⃣ Modal / Dialog overrides (if using any) */
+html.dark .modal,
+html.dark .dialog,
+html.dark [role="dialog"],
+html.dark .ReactModal__Content {
+  background: #1A1D27 !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #2E3347 !important;
+}
+
+/* 6️⃣ Tooltips & popovers (common library classes) */
+html.dark .tooltip,
+html.dark .popover,
+html.dark [data-tippy-root] {
+  background: #1E2130 !important;
+  color: #F1F5F9 !important;
+  border: 1px solid #2E3347 !important;
+}
+
+/* ── Rest of the original file — unchanged ── */
+
 * {
   box-sizing: border-box;
 }
@@ -103,6 +329,15 @@ h1, h2, h3, h4, h5, h6, .font-display {
 .badge-red { background: #FEF2F2; color: #DC2626; }
 .badge-purple { background: #F5F3FF; color: #7C3AED; }
 .badge-gray { background: #F8FAFC; color: #475569; }
+
+/* Dark overrides for badges */
+html.dark .badge-blue   { background: #1e3a5f; color: #93C5FD; }
+html.dark .badge-green  { background: var(--emerald-pale); color: #34D399; }
+html.dark .badge-orange { background: var(--saffron-pale); color: #FD8C5A; }
+html.dark .badge-yellow { background: #2d2000; color: #FCD34D; }
+html.dark .badge-red    { background: #2d0a0a; color: #FCA5A5; }
+html.dark .badge-purple { background: #1e1040; color: #C4B5FD; }
+html.dark .badge-gray   { background: #1E2130; color: #94A3B8; }
 
 /* ── Nav ── */
 .nav-link {

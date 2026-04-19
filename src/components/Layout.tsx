@@ -1,10 +1,10 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../store';
 import { useTranslation } from '../hooks/useTranslation';
-import { Store, User, LogOut, ShoppingBag, Globe, Menu, X } from 'lucide-react';
+import { Store, User, LogOut, ShoppingBag, Globe, Menu, X, Sun, Moon } from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -15,6 +15,32 @@ export const Layout = ({ children }: LayoutProps) => {
   const { user, userRole, language, setLanguage, logout } = useStore();
   const { t } = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // ── Dark mode state ──────────────────────────────────────────────────────────
+  // Always initialise to false so server + client render identically (avoids hydration mismatch).
+  // After mount, read localStorage once and apply the stored preference.
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    if (localStorage.getItem('theme') === 'dark') {
+      setIsDark(true);
+      document.documentElement.classList.add('dark');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark, mounted]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const handleLogout = () => {
     logout();
@@ -55,21 +81,29 @@ export const Layout = ({ children }: LayoutProps) => {
                 className="text-lg font-bold hidden sm:block"
                 style={{ fontFamily: 'Syne, sans-serif', color: 'var(--slate-deep)' }}
               >
-                Bloom<span style={{ color: 'var(--saffron)' }}>in</span>
+                Bloom<span style={{ color: 'var(--saffron)' }}>In</span>
               </span>
             </button>
 
             {/* Desktop nav */}
             <div className="hidden md:flex items-center gap-2">
               {/* Language toggle */}
-              <button
-                onClick={toggleLanguage}
-                className="nav-link"
-              >
+              <button onClick={toggleLanguage} className="nav-link">
                 <Globe className="w-4 h-4" />
                 <span className="text-xs font-semibold">
                   {language === 'english' ? 'EN' : 'हिं'}
                 </span>
+              </button>
+
+              {/* ── Dark mode toggle (desktop) ── */}
+              <button
+                onClick={() => setIsDark(!isDark)}
+                className="nav-link"
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark
+                  ? <Sun className="w-4 h-4" style={{ color: '#FBBF24' }} />
+                  : <Moon className="w-4 h-4" />}
               </button>
 
               {user && (
@@ -113,7 +147,7 @@ export const Layout = ({ children }: LayoutProps) => {
               )}
             </div>
 
-            {/* Mobile: language + hamburger */}
+            {/* Mobile: language + dark toggle + hamburger */}
             <div className="flex items-center gap-2 md:hidden">
               <button
                 onClick={toggleLanguage}
@@ -123,6 +157,19 @@ export const Layout = ({ children }: LayoutProps) => {
                 <Globe className="w-3.5 h-3.5" />
                 {language === 'english' ? 'EN' : 'हिं'}
               </button>
+
+              {/* ── Dark mode toggle (mobile) ── */}
+              <button
+                onClick={() => setIsDark(!isDark)}
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: 'var(--slate-mid)', background: '#F8FAFC' }}
+                title={isDark ? 'Light mode' : 'Dark mode'}
+              >
+                {isDark
+                  ? <Sun className="w-4 h-4" style={{ color: '#FBBF24' }} />
+                  : <Moon className="w-4 h-4" />}
+              </button>
+
               {user && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
