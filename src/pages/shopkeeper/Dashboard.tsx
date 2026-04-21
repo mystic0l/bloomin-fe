@@ -33,13 +33,41 @@ const Dashboard = () => {
   const [qrCode, setQrCode] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'qr'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
+  // Live image URL fetched directly from the API so we always get the correct value
+  // regardless of what is cached in the Zustand store.
+  const [liveShopImageUrl, setLiveShopImageUrl] = useState<string | null>(null);
 
   const isHindi = t('common.language') === 'hindi';
 
-  // Resolve shop image URL from either store field or backend image_url
-  const shopImageUrl = (currentShop as any)?.imageUrl || (currentShop as any)?.image_url
-    ? ((currentShop as any).imageUrl || (currentShop as any).image_url)
-    : null;
+  // Prefer the live API image, then fall back to whatever the store has persisted.
+  const shopImageUrl =
+    liveShopImageUrl ||
+    (currentShop as any)?.imageUrl ||
+    (currentShop as any)?.image_url ||
+    null;
+
+  // ── Fetch live shop data to get the correct image_url ──────────────────────
+  useEffect(() => {
+    if (!currentShop?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/shops');
+        const data = await res.json();
+        if (cancelled) return;
+        const found = Array.isArray(data)
+          ? data.find((s: any) => String(s.id) === String(currentShop.id))
+          : null;
+        if (found?.image_url) {
+          setLiveShopImageUrl(`http://localhost:5000${found.image_url}`);
+        }
+      } catch (err) {
+        console.error('[Dashboard] fetch shop image:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [currentShop?.id]);
+  // ───────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -129,13 +157,11 @@ const Dashboard = () => {
                   alt={currentShop.name}
                   className="w-full h-full object-cover rounded-2xl"
                   onError={(e) => {
-                    // fallback to icon on broken image
                     const target = e.currentTarget;
                     target.style.display = 'none';
-                    target.parentElement!.style.background = 'var(--saffron-pale)';
-                    const icon = document.createElement('div');
-                    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--saffron)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
-                    target.parentElement!.appendChild(icon.firstChild!);
+                    if (target.parentElement) {
+                      target.parentElement.style.background = 'var(--saffron-pale)';
+                    }
                   }}
                 />
               ) : (
