@@ -36,6 +36,11 @@ const Dashboard = () => {
 
   const isHindi = t('common.language') === 'hindi';
 
+  // Resolve shop image URL from either store field or backend image_url
+  const shopImageUrl = (currentShop as any)?.imageUrl || (currentShop as any)?.image_url
+    ? ((currentShop as any).imageUrl || (currentShop as any).image_url)
+    : null;
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
@@ -113,11 +118,29 @@ const Dashboard = () => {
       <div className="card p-5 sm:p-7">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
+            {/* Shop image or fallback icon */}
             <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'var(--saffron-pale)' }}
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+              style={{ background: shopImageUrl ? 'transparent' : 'var(--saffron-pale)' }}
             >
-              <Store className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'var(--saffron)' }} />
+              {shopImageUrl ? (
+                <img
+                  src={shopImageUrl}
+                  alt={currentShop.name}
+                  className="w-full h-full object-cover rounded-2xl"
+                  onError={(e) => {
+                    // fallback to icon on broken image
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    target.parentElement!.style.background = 'var(--saffron-pale)';
+                    const icon = document.createElement('div');
+                    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--saffron)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+                    target.parentElement!.appendChild(icon.firstChild!);
+                  }}
+                />
+              ) : (
+                <Store className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'var(--saffron)' }} />
+              )}
             </div>
             <div>
               <h1

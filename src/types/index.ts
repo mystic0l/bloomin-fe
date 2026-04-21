@@ -10,6 +10,7 @@ export interface Shop {
   upiQrUrl?: string;
   isActive: boolean;
   createdAt: string;
+  imageUrl?: string;
 }
 
 export interface Product {

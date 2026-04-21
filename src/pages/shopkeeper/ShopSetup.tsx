@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
-import { Store } from 'lucide-react';
+import { Store, Upload, X } from 'lucide-react';
 
 const SHOP_TYPES = [
   'grocery', 'pharmacy', 'restaurant', 'electronics',
@@ -14,6 +14,7 @@ const ShopSetup = () => {
   const { t } = useTranslation();
   const { user, addShop } = useStore();
   const isHindi = t('common.language') === 'hindi';
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,23 +26,46 @@ const ShopSetup = () => {
     upiQrUrl: '',
   });
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
+    const body = new FormData();
+    body.append('name', formData.name);
+    body.append('type', formData.type);
+    body.append('address', formData.address);
+    body.append('owner_id', user.id || 'demo-user');
+    if (imageFile) body.append('image', imageFile);
+
     const res = await fetch('http://localhost:5000/api/shops', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: formData.name,
-        type: formData.type,
-        address: formData.address,
-        owner_id: user.id || 'demo-user',
-      }),
+      body,
     });
 
     const createdShop = await res.json();
     if (!res.ok) { console.error('Shop create failed:', createdShop); return; }
+
+    const imageUrl = createdShop.image_url
+      ? `http://localhost:5000${createdShop.image_url}`
+      : undefined;
 
     addShop({
       id: String(createdShop.id),
@@ -55,7 +79,9 @@ const ShopSetup = () => {
       upiQrUrl: formData.upiQrUrl || undefined,
       isActive: true,
       createdAt: new Date().toISOString(),
-    });
+      // Store image URL in a custom field — we'll cast via index signature
+      ...(imageUrl ? { imageUrl } : {}),
+    } as any);
 
     router.push('/shopkeeper/dashboard');
   };
@@ -80,6 +106,51 @@ const ShopSetup = () => {
 
       <div className="card p-5 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* Shop Image Upload */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
+              {isHindi ? 'दुकान की तस्वीर' : 'Shop Image'} ({isHindi ? 'वैकल्पिक' : 'Optional'})
+            </label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+              id="shop-image-upload"
+            />
+            {imagePreview ? (
+              <div className="relative w-full h-40 rounded-xl overflow-hidden border border-slate-200">
+                <img
+                  src={imagePreview}
+                  alt="Shop preview"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-white shadow-md"
+                  style={{ color: '#EF4444' }}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label
+                htmlFor="shop-image-upload"
+                className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-slate-200 cursor-pointer transition-colors hover:border-saffron"
+                style={{ background: 'var(--saffron-pale)' }}
+              >
+                <Upload className="w-6 h-6 mb-2" style={{ color: 'var(--saffron)' }} />
+                <span className="text-sm font-medium" style={{ color: 'var(--saffron)' }}>
+                  {isHindi ? 'तस्वीर अपलोड करें' : 'Upload shop image'}
+                </span>
+                <span className="text-xs text-slate-400 mt-0.5">PNG, JPG up to 5MB</span>
+              </label>
+            )}
+          </div>
+
           {/* Shop name */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
