@@ -8,6 +8,9 @@ const productRoutes = require("./routes/productRoutes");
 
 app.use(cors());
 app.use(express.json());
+
+app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
+
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/shops", shopRoutes);
