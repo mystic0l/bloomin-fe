@@ -5,6 +5,7 @@ import { useStore } from '../../store';
 import { useTranslation } from '../../hooks/useTranslation';
 import { ArrowLeft, ShoppingCart, Plus, Minus, Store, MapPin, Truck, ShoppingBag } from 'lucide-react';
 import { Product } from '../../types';
+import { mapDbProductRow } from '../../utils/mapDbProduct'; 
 
 function normalizeRouteShopId(params: ReturnType<typeof useParams>): string | undefined {
   const raw = params?.shopId ?? params?.id;
@@ -55,7 +56,7 @@ const ShopView = () => {
         const data = await res.json();
         const list = Array.isArray(data) ? data : [];
         console.log('[ShopView] fetched products for shopId', shopId, ':', list);
-        setProducts(list);
+        setProducts(list.map((row) => mapDbProductRow(row)));
       } catch (err) {
         console.error('Error fetching products:', err);
         setProducts([]);
@@ -127,12 +128,20 @@ const ShopView = () => {
           </div>
         ) : shop ? (
           <div className="flex items-start gap-4">
-            <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'var(--saffron-pale)' }}
-            >
-              <Store className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'var(--saffron)' }} />
-            </div>
+            {shop.image_url ? (
+  <img
+    src={`http://localhost:5000${shop.image_url}`}
+    alt={shop.name}
+    className="w-16 h-16 sm:w-32 sm:h-32 rounded-2xl object-cover flex-shrink-0"
+  />
+) : (
+  <div
+    className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
+    style={{ background: 'var(--saffron-pale)' }}
+  >
+    <Store className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: 'var(--saffron)' }} />
+  </div>
+)}
             <div className="flex-1 min-w-0">
               <h1
                 className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"
@@ -221,7 +230,7 @@ const ShopView = () => {
                               <img
                                 src={product.imageUrl}
                                 alt={product.name}
-                                className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                                className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                               />
                             )}
                             <span className="font-semibold text-slate-800">{product.name}</span>

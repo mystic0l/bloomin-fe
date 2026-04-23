@@ -86,11 +86,13 @@ const ProductManagement = () => {
     if (!currentShop) return;
     const shopIdNum = Number(currentShop.id);
     const payload = {
-      name: formData.name,
-      price: parseFloat(formData.price),
-      quantity: parseInt(formData.quantity, 10),
-      shop_id: shopIdNum,
-    };
+  name: formData.name,
+  price: parseFloat(formData.price),
+  quantity: parseInt(formData.quantity, 10),
+  shop_id: shopIdNum,
+  flavor: formData.flavor,
+  image_url: formData.imageUrl || null,
+};
     console.log('[ProductManagement] POST /api/products', payload);
     try {
       const res = await fetch('http://localhost:5000/api/products', {
