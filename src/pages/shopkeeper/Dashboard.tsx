@@ -6,6 +6,7 @@ import { Package, ShoppingCart, QrCode, Settings, Plus, Store, MapPin, Truck, Sh
 import { generateQRCode, downloadQRCode } from '../../utils/qrcode';
 import { showNotification, requestNotificationPermission } from '../../utils/notifications';
 import { mapDbProductRow } from '../../utils/mapDbProduct';
+import { getDisplayShopName } from '../../utils/transliterateShopName';
 
 type Order = {
   id?: number | string;
@@ -173,7 +174,7 @@ const Dashboard = () => {
                 className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"
                 style={{ fontFamily: 'Syne, sans-serif' }}
               >
-                {currentShop.name}
+                {getDisplayShopName(String(currentShop.name ?? ''), isHindi)}
               </h1>
               <div className="flex items-start gap-1.5 mt-1 mb-2.5">
                 <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />

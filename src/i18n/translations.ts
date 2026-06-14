@@ -1,6 +1,7 @@
 export const translations = {
   english: {
     common: {
+      language: 'english',
       shopkeeper: 'Shopkeeper',
       customer: 'Customer',
       login: 'Login',
@@ -96,6 +97,7 @@ export const translations = {
   },
   hindi: {
     common: {
+      language: 'hindi',
       shopkeeper: 'दुकानदार',
       customer: 'ग्राहक',
       login: 'लॉगिन',
@@ -136,8 +138,8 @@ export const translations = {
       takeout: 'केवल टेकआउट',
       delivery: 'होम डिलीवरी',
       language: 'पसंदीदा भाषा',
-      upiId: 'UPI ID (वैकल्पिक)',
-      upiQr: 'UPI QR कोड (वैकल्पिक)',
+      upiId: 'यूपीआई आईडी (वैकल्पिक)',
+      upiQr: 'यूपीआई क्यूआर कोड (वैकल्पिक)',
       dashboard: 'दुकान डैशबोर्ड',
       products: 'उत्पाद',
       orders: 'आदेश',
@@ -186,7 +188,7 @@ export const translations = {
       viewProducts: 'उत्पाद देखें',
       paymentMethod: 'भुगतान विधि',
       cashOnDelivery: 'कैश ऑन डिलीवरी',
-      upiOnDelivery: 'डिलीवरी पर UPI',
+      upiOnDelivery: 'डिलीवरी पर यूपीआई',
     },
   },
 };
