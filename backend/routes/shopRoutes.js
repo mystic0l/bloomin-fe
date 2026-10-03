@@ -31,7 +31,8 @@ const upload = multer({
 // CREATE SHOP (supports optional image upload)
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { name, type, address, owner_id } = req.body;
+    const { name, type, address } = req.body;
+    const owner_id = req.user.uid;
 
     let imageUrl = null;
     if (req.file) {

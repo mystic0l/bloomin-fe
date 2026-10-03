@@ -32,7 +32,7 @@ const Auth = () => {
 
   const [isLogin, setIsLogin] = useState(true);
   const [role, setRole] = useState<"shopkeeper" | "customer">(
-    (searchParams?.get("role") as "shopkeeper" | "customer") || "customer"
+    (searchParams?.get("role") as "shopkeeper" | "customer") || "customer",
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,10 +41,15 @@ const Auth = () => {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const redirectRef = useRef(false);
 
-  const redirectToRoleHome = (userRole: Exclude<UserRole, null>, fallback?: "setup" | "shops") => {
+  const redirectToRoleHome = (
+    userRole: Exclude<UserRole, null>,
+    fallback?: "setup" | "shops",
+  ) => {
     const isShopkeeper = userRole === "shopkeeper";
     const destination = isShopkeeper
-      ? fallback === "setup" ? "/shopkeeper/setup" : "/shopkeeper/dashboard"
+      ? fallback === "setup"
+        ? "/shopkeeper/setup"
+        : "/shopkeeper/dashboard"
       : "/customer/shops";
     if (!redirectRef.current) {
       redirectRef.current = true;
@@ -58,7 +63,8 @@ const Auth = () => {
       setRole(savedUser.role);
     } else {
       const roleParam = searchParams?.get("role");
-      if (roleParam === "shopkeeper" || roleParam === "customer") setRole(roleParam);
+      if (roleParam === "shopkeeper" || roleParam === "customer")
+        setRole(roleParam);
     }
   }, [searchParams]);
 
@@ -95,7 +101,8 @@ const Auth = () => {
   }, [router, setUser, setUserRole]);
 
   useEffect(() => {
-    if (!checkingAuth && userRoleState === "shopkeeper" && userId) syncUserContext();
+    if (!checkingAuth && userRoleState === "shopkeeper" && userId)
+      syncUserContext();
   }, [checkingAuth, userRoleState, userId, shops, syncUserContext]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -103,11 +110,20 @@ const Auth = () => {
     try {
       let userCredential;
       if (isLogin) {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
       } else {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password,
+        );
       }
       const user = userCredential.user;
+
       const existingProfile = loadStoredUser(user.uid);
       const resolvedRole =
         (isLogin ? existingProfile?.role : null) ||
@@ -127,7 +143,10 @@ const Auth = () => {
       if (isLogin) {
         redirectToRoleHome(userData.role);
       } else {
-        redirectToRoleHome(userData.role, userData.role === "shopkeeper" ? "setup" : "shops");
+        redirectToRoleHome(
+          userData.role,
+          userData.role === "shopkeeper" ? "setup" : "shops",
+        );
       }
     } catch (error: any) {
       console.error("Authentication error:", error.message);
@@ -141,7 +160,7 @@ const Auth = () => {
         <div className="text-center">
           <div
             className="w-10 h-10 rounded-xl mx-auto mb-3 pulse-soft"
-            style={{ background: 'var(--saffron-pale)' }}
+            style={{ background: "var(--saffron-pale)" }}
           />
           <p className="text-sm text-slate-500">Loading…</p>
         </div>
@@ -158,16 +177,24 @@ const Auth = () => {
         <div className="text-center mb-7">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: isShopkeeper ? 'var(--saffron-pale)' : 'var(--emerald-pale)' }}
+            style={{
+              background: isShopkeeper
+                ? "var(--saffron-pale)"
+                : "var(--emerald-pale)",
+            }}
           >
-            {isShopkeeper
-              ? <Store className="w-7 h-7" style={{ color: 'var(--saffron)' }} />
-              : <ShoppingBag className="w-7 h-7" style={{ color: 'var(--emerald)' }} />
-            }
+            {isShopkeeper ? (
+              <Store className="w-7 h-7" style={{ color: "var(--saffron)" }} />
+            ) : (
+              <ShoppingBag
+                className="w-7 h-7"
+                style={{ color: "var(--emerald)" }}
+              />
+            )}
           </div>
           <h2
             className="text-2xl sm:text-3xl font-bold text-slate-800"
-            style={{ fontFamily: 'Syne, sans-serif' }}
+            style={{ fontFamily: "Syne, sans-serif" }}
           >
             {isLogin ? t("auth.welcomeBack") : t("auth.createAccount")}
           </h2>
@@ -184,8 +211,12 @@ const Auth = () => {
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all"
               style={
                 role === "shopkeeper"
-                  ? { background: 'var(--saffron)', color: 'white', boxShadow: '0 2px 8px rgba(255,107,53,0.3)' }
-                  : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                  ? {
+                      background: "var(--saffron)",
+                      color: "white",
+                      boxShadow: "0 2px 8px rgba(255,107,53,0.3)",
+                    }
+                  : { background: "#F1F5F9", color: "var(--slate-mid)" }
               }
             >
               <Store className="w-4 h-4" />
@@ -196,8 +227,12 @@ const Auth = () => {
               className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm transition-all"
               style={
                 role === "customer"
-                  ? { background: 'var(--emerald)', color: 'white', boxShadow: '0 2px 8px rgba(5,150,105,0.3)' }
-                  : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                  ? {
+                      background: "var(--emerald)",
+                      color: "white",
+                      boxShadow: "0 2px 8px rgba(5,150,105,0.3)",
+                    }
+                  : { background: "#F1F5F9", color: "var(--slate-mid)" }
               }
             >
               <ShoppingBag className="w-4 h-4" />
@@ -211,7 +246,7 @@ const Auth = () => {
               <>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                    {t('common.name')}
+                    {t("common.name")}
                   </label>
                   <input
                     type="text"
@@ -224,7 +259,7 @@ const Auth = () => {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                    {t('common.phone')}
+                    {t("common.phone")}
                   </label>
                   <input
                     type="tel"
@@ -240,7 +275,7 @@ const Auth = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                {t('common.email')}
+                {t("common.email")}
               </label>
               <input
                 type="email"
@@ -254,7 +289,7 @@ const Auth = () => {
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                {t('common.password')}
+                {t("common.password")}
               </label>
               <input
                 type="password"
@@ -271,8 +306,14 @@ const Auth = () => {
               className="w-full py-3.5 rounded-2xl text-sm font-bold text-white transition-all active:scale-98 mt-1"
               style={
                 isShopkeeper
-                  ? { background: 'var(--saffron)', boxShadow: '0 4px 12px rgba(255,107,53,0.3)' }
-                  : { background: 'var(--emerald)', boxShadow: '0 4px 12px rgba(5,150,105,0.3)' }
+                  ? {
+                      background: "var(--saffron)",
+                      boxShadow: "0 4px 12px rgba(255,107,53,0.3)",
+                    }
+                  : {
+                      background: "var(--emerald)",
+                      boxShadow: "0 4px 12px rgba(5,150,105,0.3)",
+                    }
               }
             >
               {isLogin ? t("common.login") : t("common.signup")}
@@ -283,7 +324,7 @@ const Auth = () => {
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm font-medium transition-colors"
-              style={{ color: 'var(--saffron)' }}
+              style={{ color: "var(--saffron)" }}
             >
               {isLogin
                 ? "Don't have an account? Sign up"

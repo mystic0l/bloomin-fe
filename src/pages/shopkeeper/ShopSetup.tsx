@@ -1,29 +1,37 @@
-import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useStore } from '../../store';
-import { useTranslation } from '../../hooks/useTranslation';
-import { Store, Upload, X } from 'lucide-react';
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useStore } from "../../store";
+import { useTranslation } from "../../hooks/useTranslation";
+import { Store, Upload, X } from "lucide-react";
+import { getIdToken } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const SHOP_TYPES = [
-  'grocery', 'pharmacy', 'restaurant', 'electronics',
-  'clothing', 'hardware', 'bakery', 'stationery',
+  "grocery",
+  "pharmacy",
+  "restaurant",
+  "electronics",
+  "clothing",
+  "hardware",
+  "bakery",
+  "stationery",
 ];
 
 const ShopSetup = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const { user, addShop } = useStore();
-  const isHindi = t('common.language') === 'hindi';
+  const isHindi = t("common.language") === "hindi";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
-    type: '',
-    address: '',
-    language: 'english' as 'english' | 'hindi',
-    serviceType: 'takeout' as 'takeout' | 'delivery',
-    upiId: '',
-    upiQrUrl: '',
+    name: "",
+    type: "",
+    address: "",
+    language: "english" as "english" | "hindi",
+    serviceType: "takeout" as "takeout" | "delivery",
+    upiId: "",
+    upiQrUrl: "",
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -41,27 +49,36 @@ const ShopSetup = () => {
   const clearImage = () => {
     setImageFile(null);
     setImagePreview(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    const body = new FormData();
-    body.append('name', formData.name);
-    body.append('type', formData.type);
-    body.append('address', formData.address);
-    body.append('owner_id', user.id || 'demo-user');
-    if (imageFile) body.append('image', imageFile);
+    const idToken = await getIdToken(auth.currentUser!);
 
-    const res = await fetch('http://localhost:5000/api/shops', {
-      method: 'POST',
+    const body = new FormData();
+
+    body.append("name", formData.name);
+    body.append("type", formData.type);
+    body.append("address", formData.address);
+
+    if (imageFile) body.append("image", imageFile);
+
+    const res = await fetch("http://localhost:5000/api/shops", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
       body,
     });
 
     const createdShop = await res.json();
-    if (!res.ok) { console.error('Shop create failed:', createdShop); return; }
+    if (!res.ok) {
+      console.error("Shop create failed:", createdShop);
+      return;
+    }
 
     const imageUrl = createdShop.image_url
       ? `http://localhost:5000${createdShop.image_url}`
@@ -83,7 +100,7 @@ const ShopSetup = () => {
       ...(imageUrl ? { imageUrl } : {}),
     } as any);
 
-    router.push('/shopkeeper/dashboard');
+    router.push("/shopkeeper/dashboard");
   };
 
   return (
@@ -92,25 +109,29 @@ const ShopSetup = () => {
       <div className="flex items-center gap-3 mb-5 sm:mb-7">
         <div
           className="w-10 h-10 rounded-xl flex items-center justify-center"
-          style={{ background: 'var(--saffron-pale)' }}
+          style={{ background: "var(--saffron-pale)" }}
         >
-          <Store className="w-5 h-5" style={{ color: 'var(--saffron)' }} />
+          <Store className="w-5 h-5" style={{ color: "var(--saffron)" }} />
         </div>
         <div>
-          <h1 className="section-title text-xl sm:text-2xl">{t('shop.setup')}</h1>
+          <h1 className="section-title text-xl sm:text-2xl">
+            {t("shop.setup")}
+          </h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            {isHindi ? 'अपनी दुकान की जानकारी भरें' : 'Fill in your shop information'}
+            {isHindi
+              ? "अपनी दुकान की जानकारी भरें"
+              : "Fill in your shop information"}
           </p>
         </div>
       </div>
 
       <div className="card p-5 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
-
           {/* Shop Image Upload */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-              {isHindi ? 'दुकान की तस्वीर' : 'Shop Image'} ({isHindi ? 'वैकल्पिक' : 'Optional'})
+              {isHindi ? "दुकान की तस्वीर" : "Shop Image"} (
+              {isHindi ? "वैकल्पिक" : "Optional"})
             </label>
             <input
               ref={fileInputRef}
@@ -131,7 +152,7 @@ const ShopSetup = () => {
                   type="button"
                   onClick={clearImage}
                   className="absolute top-2 right-2 p-1.5 rounded-full bg-white shadow-md"
-                  style={{ color: '#EF4444' }}
+                  style={{ color: "#EF4444" }}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -140,13 +161,21 @@ const ShopSetup = () => {
               <label
                 htmlFor="shop-image-upload"
                 className="flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed border-slate-200 cursor-pointer transition-colors hover:border-saffron"
-                style={{ background: 'var(--saffron-pale)' }}
+                style={{ background: "var(--saffron-pale)" }}
               >
-                <Upload className="w-6 h-6 mb-2" style={{ color: 'var(--saffron)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--saffron)' }}>
-                  {isHindi ? 'तस्वीर अपलोड करें' : 'Upload shop image'}
+                <Upload
+                  className="w-6 h-6 mb-2"
+                  style={{ color: "var(--saffron)" }}
+                />
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "var(--saffron)" }}
+                >
+                  {isHindi ? "तस्वीर अपलोड करें" : "Upload shop image"}
                 </span>
-                <span className="text-xs text-slate-400 mt-0.5">PNG, JPG up to 5MB</span>
+                <span className="text-xs text-slate-400 mt-0.5">
+                  PNG, JPG up to 5MB
+                </span>
               </label>
             )}
           </div>
@@ -154,12 +183,14 @@ const ShopSetup = () => {
           {/* Shop name */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-              {t('shop.shopName')} *
+              {t("shop.shopName")} *
             </label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
               required
               className="input-base"
               placeholder="My Shop"
@@ -169,15 +200,17 @@ const ShopSetup = () => {
           {/* Shop type */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-              {t('shop.shopType')} *
+              {t("shop.shopType")} *
             </label>
             <select
               value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, type: e.target.value })
+              }
               required
               className="input-base"
             >
-              <option value="">{isHindi ? 'चुनें' : 'Select type'}</option>
+              <option value="">{isHindi ? "चुनें" : "Select type"}</option>
               {SHOP_TYPES.map((type) => (
                 <option key={type} value={type}>
                   {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -189,25 +222,27 @@ const ShopSetup = () => {
           {/* Address */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-              {t('common.address')} *
+              {t("common.address")} *
             </label>
             <textarea
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
               required
               rows={3}
               className="input-base resize-none"
-              placeholder={isHindi ? 'पूरा पता' : 'Full address'}
+              placeholder={isHindi ? "पूरा पता" : "Full address"}
             />
           </div>
 
           {/* Language */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-              {t('shop.language')} *
+              {t("shop.language")} *
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {(['english', 'hindi'] as const).map((lang) => (
+              {(["english", "hindi"] as const).map((lang) => (
                 <button
                   key={lang}
                   type="button"
@@ -215,11 +250,15 @@ const ShopSetup = () => {
                   className="py-3 px-4 rounded-xl font-semibold text-sm transition-all"
                   style={
                     formData.language === lang
-                      ? { background: 'var(--saffron)', color: 'white', boxShadow: '0 2px 8px rgba(255,107,53,0.3)' }
-                      : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                      ? {
+                          background: "var(--saffron)",
+                          color: "white",
+                          boxShadow: "0 2px 8px rgba(255,107,53,0.3)",
+                        }
+                      : { background: "#F1F5F9", color: "var(--slate-mid)" }
                   }
                 >
-                  {lang === 'english' ? 'English' : 'हिंदी'}
+                  {lang === "english" ? "English" : "हिंदी"}
                 </button>
               ))}
             </div>
@@ -228,53 +267,66 @@ const ShopSetup = () => {
           {/* Service type */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
-              {t('shop.serviceType')} *
+              {t("shop.serviceType")} *
             </label>
             <div className="grid grid-cols-2 gap-3">
-              {(['takeout', 'delivery'] as const).map((sType) => (
+              {(["takeout", "delivery"] as const).map((sType) => (
                 <button
                   key={sType}
                   type="button"
-                  onClick={() => setFormData({ ...formData, serviceType: sType })}
+                  onClick={() =>
+                    setFormData({ ...formData, serviceType: sType })
+                  }
                   className="py-3 px-4 rounded-xl font-semibold text-sm transition-all"
                   style={
                     formData.serviceType === sType
-                      ? { background: 'var(--saffron)', color: 'white', boxShadow: '0 2px 8px rgba(255,107,53,0.3)' }
-                      : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                      ? {
+                          background: "var(--saffron)",
+                          color: "white",
+                          boxShadow: "0 2px 8px rgba(255,107,53,0.3)",
+                        }
+                      : { background: "#F1F5F9", color: "var(--slate-mid)" }
                   }
                 >
-                  {sType === 'takeout' ? t('shop.takeout') : t('shop.delivery')}
+                  {sType === "takeout" ? t("shop.takeout") : t("shop.delivery")}
                 </button>
               ))}
             </div>
           </div>
 
           {/* UPI (delivery only) */}
-          {formData.serviceType === 'delivery' && (
-            <div className="space-y-4 p-4 rounded-2xl" style={{ background: '#FAFAFA', border: '1px solid #F1F5F9' }}>
+          {formData.serviceType === "delivery" && (
+            <div
+              className="space-y-4 p-4 rounded-2xl"
+              style={{ background: "#FAFAFA", border: "1px solid #F1F5F9" }}
+            >
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                {isHindi ? 'भुगतान (वैकल्पिक)' : 'Payment (Optional)'}
+                {isHindi ? "भुगतान (वैकल्पिक)" : "Payment (Optional)"}
               </p>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                  {t('shop.upiId')}
+                  {t("shop.upiId")}
                 </label>
                 <input
                   type="text"
                   value={formData.upiId}
-                  onChange={(e) => setFormData({ ...formData, upiId: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, upiId: e.target.value })
+                  }
                   className="input-base"
                   placeholder="yourname@upi"
                 />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
-                  {t('shop.upiQr')}
+                  {t("shop.upiQr")}
                 </label>
                 <input
                   type="url"
                   value={formData.upiQrUrl}
-                  onChange={(e) => setFormData({ ...formData, upiQrUrl: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, upiQrUrl: e.target.value })
+                  }
                   className="input-base"
                   placeholder="https://..."
                 />
@@ -282,8 +334,11 @@ const ShopSetup = () => {
             </div>
           )}
 
-          <button type="submit" className="btn-primary w-full py-3.5 text-base rounded-2xl mt-2">
-            {t('common.submit')}
+          <button
+            type="submit"
+            className="btn-primary w-full py-3.5 text-base rounded-2xl mt-2"
+          >
+            {t("common.submit")}
           </button>
         </form>
       </div>
