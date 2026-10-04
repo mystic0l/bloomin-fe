@@ -24,3 +24,4 @@ export const downloadQRCode = (dataUrl: string, filename: string) => {
   link.click();
   document.body.removeChild(link);
 };
+

@@ -62,4 +62,57 @@ router.get("/", async (req, res) => {
   }
 });
 
+// UPDATE SHOP
+router.put("/:id", upload.single("image"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, address } = req.body;
+
+    // Check that the authenticated user owns this shop
+    const shopResult = await pool.query(
+      `SELECT id, image_url
+       FROM shops
+       WHERE id = $1
+         AND owner_id = $2`,
+      [Number(id), req.user.uid]
+    );
+
+    if (shopResult.rows.length === 0) {
+      return res.status(403).json({
+        error: "You are not allowed to update this shop",
+      });
+    }
+
+    const existingShop = shopResult.rows[0];
+
+    let imageUrl = existingShop.image_url;
+
+    if (req.file) {
+      imageUrl = `/uploads/${req.file.filename}`;
+    }
+
+    const result = await pool.query(
+      `UPDATE shops
+       SET name = $1,
+           type = $2,
+           address = $3,
+           image_url = $4
+       WHERE id = $5
+       RETURNING *`,
+      [
+        name,
+        type,
+        address,
+        imageUrl,
+        Number(id),
+      ]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("UPDATE SHOP ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

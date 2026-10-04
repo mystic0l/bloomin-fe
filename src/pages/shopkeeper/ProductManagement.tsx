@@ -60,7 +60,7 @@ const ProductManagement = () => {
         const idToken = await getIdToken(user);
 
         const res = await fetch(
-          `http://localhost:5000/api/products/${shopId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/products/${shopId}`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
@@ -124,14 +124,50 @@ const ProductManagement = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingProduct) {
-      updateProduct(editingProduct.id, {
-        name: formData.name,
-        flavor: formData.flavor,
-        price: parseFloat(formData.price),
-        quantity: parseInt(formData.quantity, 10),
-        imageUrl: formData.imageUrl || undefined,
-      });
-      resetForm();
+      try {
+        const user = auth.currentUser;
+
+        if (!user) {
+          console.error("[ProductManagement] No authenticated Firebase user");
+          return;
+        }
+
+        const idToken = await getIdToken(user);
+
+        const payload = {
+          name: formData.name,
+          flavor: formData.flavor,
+          price: parseFloat(formData.price),
+          quantity: parseInt(formData.quantity, 10),
+          image_url: formData.imageUrl || null,
+        };
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/products/${editingProduct.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+            body: JSON.stringify(payload),
+          },
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("[ProductManagement] update failed:", data);
+          return;
+        }
+
+        updateProduct(editingProduct.id, mapDbProductRow(data));
+
+        resetForm();
+      } catch (err) {
+        console.error("[ProductManagement] UPDATE ERROR:", err);
+      }
+
       return;
     }
     if (!currentShop) return;
@@ -155,7 +191,7 @@ const ProductManagement = () => {
 
       const idToken = await getIdToken(user);
 
-      const res = await fetch("http://localhost:5000/api/products", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -176,9 +212,41 @@ const ProductManagement = () => {
     }
   };
 
-  const handleDelete = (productId: string) => {
-    if (confirm(isHindi ? "क्या आप सुनिश्चित हैं?" : "Are you sure?")) {
+  const handleDelete = async (productId: string) => {
+    if (!confirm(isHindi ? "क्या आप सुनिश्चित हैं?" : "Are you sure?")) {
+      return;
+    }
+
+    try {
+      const user = auth.currentUser;
+
+      if (!user) {
+        console.error("[ProductManagement] No authenticated Firebase user");
+        return;
+      }
+
+      const idToken = await getIdToken(user);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/products/${productId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("[ProductManagement] delete failed:", data);
+        return;
+      }
+
       deleteProduct(productId);
+    } catch (err) {
+      console.error("[ProductManagement] DELETE ERROR:", err);
     }
   };
 
@@ -483,3 +551,4 @@ const ProductManagement = () => {
 };
 
 export default ProductManagement;
+

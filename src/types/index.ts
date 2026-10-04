@@ -64,3 +64,4 @@ export interface CartItem {
 }
 
 export type UserRole = 'shopkeeper' | 'customer' | null;
+

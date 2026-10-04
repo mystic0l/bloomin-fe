@@ -39,3 +39,4 @@ export const showNotification = (title: string, options?: NotificationOptions) =
     playNotificationSound();
   }
 };
+

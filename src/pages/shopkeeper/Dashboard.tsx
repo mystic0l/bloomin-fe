@@ -53,6 +53,7 @@ const Dashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   // Live image URL fetched directly from the API so we always get the correct value
   // regardless of what is cached in the Zustand store.
+  const [liveShop, setLiveShop] = useState<any>(null);
   const [liveShopImageUrl, setLiveShopImageUrl] = useState<string | null>(null);
 
   const isHindi = t("common.language") === "hindi";
@@ -63,6 +64,8 @@ const Dashboard = () => {
     (currentShop as any)?.imageUrl ||
     (currentShop as any)?.image_url ||
     null;
+
+  const displayedShop = liveShop || currentShop;
 
   // ── Fetch live shop data to get the correct image_url ──────────────────────
   useEffect(() => {
@@ -79,7 +82,7 @@ const Dashboard = () => {
       try {
         const idToken = await getIdToken(user);
 
-        const res = await fetch("http://localhost:5000/api/shops", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
           headers: {
             Authorization: `Bearer ${idToken}`,
           },
@@ -93,8 +96,17 @@ const Dashboard = () => {
           ? data.find((s: any) => String(s.id) === String(currentShop.id))
           : null;
 
-        if (found?.image_url) {
-          setLiveShopImageUrl(`http://localhost:5000${found.image_url}`);
+        if (found) {
+          setLiveShop({
+            ...currentShop,
+            ...found,
+          });
+
+          if (found.image_url) {
+            setLiveShopImageUrl(`${process.env.NEXT_PUBLIC_API_URL}${found.image_url}`);
+          } else {
+            setLiveShopImageUrl(null);
+          }
         }
       } catch (err) {
         console.error("[Dashboard] fetch shop image:", err);
@@ -108,44 +120,47 @@ const Dashboard = () => {
   }, [currentShop?.id]);
   // ───────────────────────────────────────────────────────────────────────────
 
-useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const unsubscribe = onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      console.error("[Dashboard] No authenticated Firebase user");
-      return;
-    }
-
-    try {
-      const idToken = await getIdToken(user);
-
-      const res = await fetch("http://localhost:5000/api/orders", {
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("[Dashboard] load orders failed:", data);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        console.error("[Dashboard] No authenticated Firebase user");
         return;
       }
 
-      if (cancelled) return;
+      try {
+        const idToken = await getIdToken(user);
 
-      setOrders(Array.isArray(data) ? (data as Order[]) : []);
-    } catch (err) {
-      console.error("[Dashboard] load orders:", err);
-    }
-  });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/orders?role=shopkeeper`,
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          },
+        );
 
-  return () => {
-    cancelled = true;
-    unsubscribe();
-  };
-}, []);
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("[Dashboard] load orders failed:", data);
+          return;
+        }
+
+        if (cancelled) return;
+
+        setOrders(Array.isArray(data) ? (data as Order[]) : []);
+      } catch (err) {
+        console.error("[Dashboard] load orders:", err);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (!currentShop) {
@@ -187,7 +202,7 @@ useEffect(() => {
         const idToken = await getIdToken(user);
 
         const res = await fetch(
-          `http://localhost:5000/api/products/${shopId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/products/${shopId}`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
@@ -286,15 +301,17 @@ useEffect(() => {
                 className="text-xl sm:text-2xl font-bold text-slate-800 leading-tight"
                 style={{ fontFamily: "Syne, sans-serif" }}
               >
-                {getDisplayShopName(String(currentShop.name ?? ""), isHindi)}
+                {getDisplayShopName(String(displayedShop.name ?? ""), isHindi)}
               </h1>
               <div className="flex items-start gap-1.5 mt-1 mb-2.5">
                 <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-slate-500">{currentShop.address}</p>
+                <p className="text-sm text-slate-500">
+                  {displayedShop.address}
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="badge badge-blue capitalize">
-                  {currentShop.type}
+                  {displayedShop.type}
                 </span>
                 <span
                   className="badge"
@@ -643,15 +660,29 @@ const OrdersTab = ({
                     value={status}
                     onChange={async (e) => {
                       const newStatus = e.target.value;
+
                       try {
+                        const currentUser = auth.currentUser;
+
+                        if (!currentUser) {
+                          console.error("No authenticated Firebase user");
+                          return;
+                        }
+
+                        const idToken = await getIdToken(currentUser);
+
                         const res = await fetch(
-                          `http://localhost:5000/api/orders/${order.id}/status`,
+                          `${process.env.NEXT_PUBLIC_API_URL}/api/orders/${order.id}/status`,
                           {
                             method: "PUT",
-                            headers: { "Content-Type": "application/json" },
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${idToken}`,
+                            },
                             body: JSON.stringify({ status: newStatus }),
                           },
                         );
+
                         if (!res.ok) {
                           console.error(
                             "Status update failed:",
@@ -659,6 +690,7 @@ const OrdersTab = ({
                           );
                           return;
                         }
+
                         onOrderStatusUpdated?.(
                           order.id as string | number,
                           newStatus,
@@ -686,3 +718,4 @@ const OrdersTab = ({
 };
 
 export default Dashboard;
+

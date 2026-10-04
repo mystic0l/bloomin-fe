@@ -13,3 +13,4 @@ export function mapDbProductRow(row: Record<string, unknown>): Product {
     isActive: (row.is_active as boolean) ?? (row.isActive as boolean) ?? true,
   };
 }
+

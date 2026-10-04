@@ -66,7 +66,7 @@ const ShopSetup = () => {
 
     if (imageFile) body.append("image", imageFile);
 
-    const res = await fetch("http://localhost:5000/api/shops", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${idToken}`,
@@ -81,7 +81,7 @@ const ShopSetup = () => {
     }
 
     const imageUrl = createdShop.image_url
-      ? `http://localhost:5000${createdShop.image_url}`
+      ? `${process.env.NEXT_PUBLIC_API_URL}${createdShop.image_url}`
       : undefined;
 
     addShop({
@@ -347,3 +347,4 @@ const ShopSetup = () => {
 };
 
 export default ShopSetup;
+

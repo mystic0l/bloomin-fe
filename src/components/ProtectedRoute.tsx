@@ -32,3 +32,4 @@ export function ProtectedRoute({ children, role }: ProtectedRouteProps) {
   return <>{children}</>
 }
 
+

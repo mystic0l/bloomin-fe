@@ -1,40 +1,78 @@
-import { useRouter } from 'next/navigation';
-import { useStore } from '../../store';
-import { useTranslation } from '../../hooks/useTranslation';
-import { Search, Store, MapPin, Truck, ShoppingBag, ChevronRight } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { getDisplayShopName } from '../../utils/transliterateShopName';
+import { useRouter } from "next/navigation";
+import { useStore } from "../../store";
+import { useTranslation } from "../../hooks/useTranslation";
+import {
+  Search,
+  Store,
+  MapPin,
+  Truck,
+  ShoppingBag,
+  ChevronRight,
+} from "lucide-react";
+import { useState, useEffect } from "react";
+import { getDisplayShopName } from "../../utils/transliterateShopName";
+import { getIdToken, onAuthStateChanged } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const ShopList = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const [shops, setShops] = useState<any[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState<string>("all");
 
   useEffect(() => {
-    const fetchShops = async () => {
+    let cancelled = false;
+
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        console.error("No authenticated Firebase user");
+        return;
+      }
+
       try {
-        const res = await fetch("http://localhost:5000/api/shops");
+        const idToken = await getIdToken(user);
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        });
+
         const data = await res.json();
-        setShops(data);
+
+        if (!res.ok) {
+          console.error("Failed to fetch shops:", data);
+          return;
+        }
+
+        if (cancelled) return;
+
+        setShops(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Error fetching shops:", err);
       }
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
     };
-    fetchShops();
   }, []);
 
-  const isHindi = t('common.language') === 'hindi';
+  const isHindi = t("common.language") === "hindi";
   const activeShops = shops;
-  const shopTypes = ['all', ...Array.from(new Set(activeShops.map((shop) => shop.type)))];
+  const shopTypes = [
+    "all",
+    ...Array.from(new Set(activeShops.map((shop) => shop.type))),
+  ];
 
   const filteredShops = activeShops.filter((shop) => {
     const matchesSearch =
       shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       shop.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
       shop.address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === 'all' || shop.type === selectedType;
+    const matchesType = selectedType === "all" || shop.type === selectedType;
     return matchesSearch && matchesType;
   });
 
@@ -44,9 +82,9 @@ const ShopList = () => {
       <div className="card p-5 sm:p-8">
         <h1
           className="text-2xl sm:text-3xl font-bold text-slate-800 mb-5"
-          style={{ fontFamily: 'Syne, sans-serif' }}
+          style={{ fontFamily: "Syne, sans-serif" }}
         >
-          {t('customer.browseShops')}
+          {t("customer.browseShops")}
         </h1>
 
         {/* Search */}
@@ -56,7 +94,7 @@ const ShopList = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('common.search')}
+            placeholder={t("common.search")}
             className="input-base pl-10"
           />
         </div>
@@ -64,7 +102,7 @@ const ShopList = () => {
         {/* Category chips */}
         <div>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            {t('customer.categories')}
+            {t("customer.categories")}
           </p>
           <div className="flex flex-wrap gap-2">
             {shopTypes.map((type) => (
@@ -74,12 +112,18 @@ const ShopList = () => {
                 className="px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-150 active:scale-95"
                 style={
                   selectedType === type
-                    ? { background: 'var(--saffron)', color: 'white', boxShadow: '0 2px 8px rgba(255,107,53,0.3)' }
-                    : { background: '#F1F5F9', color: 'var(--slate-mid)' }
+                    ? {
+                        background: "var(--saffron)",
+                        color: "white",
+                        boxShadow: "0 2px 8px rgba(255,107,53,0.3)",
+                      }
+                    : { background: "#F1F5F9", color: "var(--slate-mid)" }
                 }
               >
-                {type === 'all'
-                  ? (isHindi ? 'सभी' : 'All')
+                {type === "all"
+                  ? isHindi
+                    ? "सभी"
+                    : "All"
                   : type.charAt(0).toUpperCase() + type.slice(1)}
               </button>
             ))}
@@ -90,7 +134,7 @@ const ShopList = () => {
       {/* Results count */}
       {filteredShops.length > 0 && (
         <p className="text-sm text-slate-500 px-1">
-          {filteredShops.length} {isHindi ? 'दुकानें मिलीं' : 'shops found'}
+          {filteredShops.length} {isHindi ? "दुकानें मिलीं" : "shops found"}
         </p>
       )}
 
@@ -110,15 +154,15 @@ const ShopList = () => {
         <div className="card p-12 text-center">
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'var(--saffron-pale)' }}
+            style={{ background: "var(--saffron-pale)" }}
           >
-            <Store className="w-7 h-7" style={{ color: 'var(--saffron)' }} />
+            <Store className="w-7 h-7" style={{ color: "var(--saffron)" }} />
           </div>
           <p className="text-slate-600 font-medium">
-            {isHindi ? 'कोई दुकान नहीं मिली' : 'No shops found'}
+            {isHindi ? "कोई दुकान नहीं मिली" : "No shops found"}
           </p>
           <p className="text-slate-400 text-sm mt-1">
-            {isHindi ? 'अलग खोज करें' : 'Try a different search'}
+            {isHindi ? "अलग खोज करें" : "Try a different search"}
           </p>
         </div>
       )}
@@ -127,8 +171,9 @@ const ShopList = () => {
 };
 
 const ShopCard = ({ shop, onClick, t }: any) => {
-  const isHindi = t('common.language') === 'hindi';
-  const isDelivery = shop.serviceType === 'delivery' || shop.service_type === 'delivery';
+  const isHindi = t("common.language") === "hindi";
+  const isDelivery =
+    shop.serviceType === "delivery" || shop.service_type === "delivery";
 
   return (
     <button
@@ -138,7 +183,7 @@ const ShopCard = ({ shop, onClick, t }: any) => {
       {/* Top accent bar */}
       <div
         className="h-1.5 w-full"
-        style={{ background: isDelivery ? 'var(--emerald)' : 'var(--saffron)' }}
+        style={{ background: isDelivery ? "var(--emerald)" : "var(--saffron)" }}
       />
 
       <div className="p-5">
@@ -146,30 +191,30 @@ const ShopCard = ({ shop, onClick, t }: any) => {
         <div className="flex items-start gap-3 mb-3">
           <div
             className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'var(--saffron-pale)' }}
+            style={{ background: "var(--saffron-pale)" }}
           >
-            <Store className="w-5 h-5" style={{ color: 'var(--saffron)' }} />
+            <Store className="w-5 h-5" style={{ color: "var(--saffron)" }} />
           </div>
           <div className="flex-1 min-w-0">
             <h3
               className="font-bold text-slate-800 text-base leading-tight truncate"
-              style={{ fontFamily: 'Syne, sans-serif' }}
+              style={{ fontFamily: "Syne, sans-serif" }}
             >
-              {getDisplayShopName(String(shop.name ?? ''), isHindi)}
+              {getDisplayShopName(String(shop.name ?? ""), isHindi)}
             </h3>
             <span className="text-xs text-slate-500 capitalize">
               {shop.type}
             </span>
           </div>
-          <ChevronRight
-            className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 mt-1"
-          />
+          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 transition-colors flex-shrink-0 mt-1" />
         </div>
 
         {/* Address */}
         <div className="flex items-start gap-2 mb-4">
           <MapPin className="w-3.5 h-3.5 text-slate-400 mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{shop.address}</p>
+          <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+            {shop.address}
+          </p>
         </div>
 
         {/* Service type badge */}
@@ -178,20 +223,27 @@ const ShopCard = ({ shop, onClick, t }: any) => {
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
             style={
               isDelivery
-                ? { background: 'var(--emerald-pale)', color: 'var(--emerald)' }
-                : { background: 'var(--saffron-pale)', color: 'var(--saffron)' }
+                ? { background: "var(--emerald-pale)", color: "var(--emerald)" }
+                : { background: "var(--saffron-pale)", color: "var(--saffron)" }
             }
           >
-            {isDelivery
-              ? <><Truck className="w-3 h-3" />{t('shop.delivery')}</>
-              : <><ShoppingBag className="w-3 h-3" />{t('shop.takeout')}</>
-            }
+            {isDelivery ? (
+              <>
+                <Truck className="w-3 h-3" />
+                {t("shop.delivery")}
+              </>
+            ) : (
+              <>
+                <ShoppingBag className="w-3 h-3" />
+                {t("shop.takeout")}
+              </>
+            )}
           </span>
           <span
             className="text-xs font-semibold"
-            style={{ color: 'var(--saffron)' }}
+            style={{ color: "var(--saffron)" }}
           >
-            {t('customer.viewProducts')} →
+            {t("customer.viewProducts")} →
           </span>
         </div>
       </div>
@@ -200,3 +252,4 @@ const ShopCard = ({ shop, onClick, t }: any) => {
 };
 
 export default ShopList;
+
