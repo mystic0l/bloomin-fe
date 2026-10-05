@@ -17,6 +17,17 @@ const SHOP_TYPES = [
   "stationery",
 ];
 
+const SHOP_TYPE_LABELS: Record<string, { en: string; hi: string }> = {
+  grocery: { en: "Grocery", hi: "किराना" },
+  pharmacy: { en: "Pharmacy", hi: "दवा की दुकान" },
+  restaurant: { en: "Restaurant", hi: "रेस्तरां" },
+  electronics: { en: "Electronics", hi: "इलेक्ट्रॉनिक्स" },
+  clothing: { en: "Clothing", hi: "कपड़े" },
+  hardware: { en: "Hardware", hi: "हार्डवेयर" },
+  bakery: { en: "Bakery", hi: "बेकरी" },
+  stationery: { en: "Stationery", hi: "स्टेशनरी" },
+};
+
 const ShopSetup = () => {
   const router = useRouter();
   const { t } = useTranslation();
@@ -213,7 +224,9 @@ const ShopSetup = () => {
               <option value="">{isHindi ? "चुनें" : "Select type"}</option>
               {SHOP_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {isHindi
+                    ? SHOP_TYPE_LABELS[type].hi
+                    : SHOP_TYPE_LABELS[type].en}
                 </option>
               ))}
             </select>
@@ -347,4 +360,3 @@ const ShopSetup = () => {
 };
 
 export default ShopSetup;
-

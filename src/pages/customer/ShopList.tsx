@@ -14,6 +14,17 @@ import { getDisplayShopName } from "../../utils/transliterateShopName";
 import { getIdToken, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+const SHOP_TYPE_LABELS: Record<string, { en: string; hi: string }> = {
+  grocery: { en: "Grocery", hi: "किराना" },
+  pharmacy: { en: "Pharmacy", hi: "दवा की दुकान" },
+  restaurant: { en: "Restaurant", hi: "रेस्तरां" },
+  electronics: { en: "Electronics", hi: "इलेक्ट्रॉनिक्स" },
+  clothing: { en: "Clothing", hi: "कपड़े" },
+  hardware: { en: "Hardware", hi: "हार्डवेयर" },
+  bakery: { en: "Bakery", hi: "बेकरी" },
+  stationery: { en: "Stationery", hi: "स्टेशनरी" },
+};
+
 const ShopList = () => {
   const router = useRouter();
   const { t } = useTranslation();
@@ -33,11 +44,14 @@ const ShopList = () => {
       try {
         const idToken = await getIdToken(user);
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
           },
-        });
+        );
 
         const data = await res.json();
 
@@ -124,7 +138,9 @@ const ShopList = () => {
                   ? isHindi
                     ? "सभी"
                     : "All"
-                  : type.charAt(0).toUpperCase() + type.slice(1)}
+                  : isHindi
+                    ? (SHOP_TYPE_LABELS[type]?.hi ?? type)
+                    : (SHOP_TYPE_LABELS[type]?.en ?? type)}
               </button>
             ))}
           </div>
@@ -190,10 +206,29 @@ const ShopCard = ({ shop, onClick, t }: any) => {
         {/* Shop icon + name */}
         <div className="flex items-start gap-3 mb-3">
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "var(--saffron-pale)" }}
+            className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+            style={{
+              background: shop.image_url
+                ? "transparent"
+                : "var(--saffron-pale)",
+            }}
           >
-            <Store className="w-5 h-5" style={{ color: "var(--saffron)" }} />
+            {shop.image_url ? (
+              <img
+                src={`${process.env.NEXT_PUBLIC_API_URL}${shop.image_url}`}
+                alt={shop.name}
+                className="w-full h-full object-cover rounded-xl"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  if (e.currentTarget.parentElement) {
+                    e.currentTarget.parentElement.style.background =
+                      "var(--saffron-pale)";
+                  }
+                }}
+              />
+            ) : (
+              <Store className="w-5 h-5" style={{ color: "var(--saffron)" }} />
+            )}
           </div>
           <div className="flex-1 min-w-0">
             <h3
@@ -252,4 +287,3 @@ const ShopCard = ({ shop, onClick, t }: any) => {
 };
 
 export default ShopList;
-

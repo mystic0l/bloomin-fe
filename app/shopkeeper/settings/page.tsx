@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { useRouter } from "next/navigation";
 import { Store, Upload, X, ArrowLeft } from "lucide-react";
 import { getIdToken, onAuthStateChanged } from "firebase/auth";
@@ -17,8 +18,21 @@ const SHOP_TYPES = [
   "stationery",
 ];
 
+const SHOP_TYPE_LABELS: Record<string, { en: string; hi: string }> = {
+  grocery: { en: "Grocery", hi: "किराना" },
+  pharmacy: { en: "Pharmacy", hi: "दवा की दुकान" },
+  restaurant: { en: "Restaurant", hi: "रेस्तरां" },
+  electronics: { en: "Electronics", hi: "इलेक्ट्रॉनिक्स" },
+  clothing: { en: "Clothing", hi: "कपड़े" },
+  hardware: { en: "Hardware", hi: "हार्डवेयर" },
+  bakery: { en: "Bakery", hi: "बेकरी" },
+  stationery: { en: "Stationery", hi: "स्टेशनरी" },
+};
+
 const SettingsPage = () => {
   const router = useRouter();
+  const { t } = useTranslation();
+  const isHindi = t("common.language") === "hindi";
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [shop, setShop] = useState<any>(null);
@@ -45,11 +59,14 @@ const SettingsPage = () => {
       try {
         const idToken = await getIdToken(user);
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
           },
-        });
+        );
 
         const data = await res.json();
 
@@ -77,7 +94,7 @@ const SettingsPage = () => {
 
         if (userShop.image_url) {
           setImagePreview(
-            `${process.env.NEXT_PUBLIC_API_URL}${userShop.image_url}`
+            `${process.env.NEXT_PUBLIC_API_URL}${userShop.image_url}`,
           );
         }
       } catch (err) {
@@ -90,9 +107,7 @@ const SettingsPage = () => {
     return () => unsubscribe();
   }, [router]);
 
-  const handleImageChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
 
     if (!file) return;
@@ -152,7 +167,7 @@ const SettingsPage = () => {
             Authorization: `Bearer ${idToken}`,
           },
           body,
-        }
+        },
       );
 
       const data = await res.json();
@@ -195,16 +210,11 @@ const SettingsPage = () => {
           className="w-10 h-10 rounded-xl flex items-center justify-center"
           style={{ background: "var(--saffron-pale)" }}
         >
-          <Store
-            className="w-5 h-5"
-            style={{ color: "var(--saffron)" }}
-          />
+          <Store className="w-5 h-5" style={{ color: "var(--saffron)" }} />
         </div>
 
         <div>
-          <h1 className="section-title text-xl sm:text-2xl">
-            Edit Shop
-          </h1>
+          <h1 className="section-title text-xl sm:text-2xl">Edit Shop</h1>
 
           <p className="text-xs text-slate-500 mt-0.5">
             Update your shop information
@@ -214,7 +224,6 @@ const SettingsPage = () => {
 
       <div className="card p-5 sm:p-8">
         <form onSubmit={handleSubmit} className="space-y-5">
-
           {/* Shop Image */}
           <div>
             <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">
@@ -314,7 +323,9 @@ const SettingsPage = () => {
 
               {SHOP_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  {isHindi
+                    ? SHOP_TYPE_LABELS[type].hi
+                    : SHOP_TYPE_LABELS[type].en}
                 </option>
               ))}
             </select>

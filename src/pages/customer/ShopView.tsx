@@ -27,6 +27,17 @@ function normalizeRouteShopId(
   return Array.isArray(raw) ? raw[0] : String(raw);
 }
 
+const SHOP_TYPE_LABELS: Record<string, { en: string; hi: string }> = {
+  grocery: { en: "Grocery", hi: "किराना" },
+  pharmacy: { en: "Pharmacy", hi: "दवा की दुकान" },
+  restaurant: { en: "Restaurant", hi: "रेस्तरां" },
+  electronics: { en: "Electronics", hi: "इलेक्ट्रॉनिक्स" },
+  clothing: { en: "Clothing", hi: "कपड़े" },
+  hardware: { en: "Hardware", hi: "हार्डवेयर" },
+  bakery: { en: "Bakery", hi: "बेकरी" },
+  stationery: { en: "Stationery", hi: "स्टेशनरी" },
+};
+
 const ShopView = () => {
   const params = useParams();
   const shopId = normalizeRouteShopId(params);
@@ -64,11 +75,14 @@ const ShopView = () => {
       try {
         const idToken = await getIdToken(user);
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
           },
-        });
+        );
 
         const data = await res.json();
 
@@ -232,13 +246,33 @@ const ShopView = () => {
         ) : shop ? (
           <div className="flex items-start gap-4">
             <div
-              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ background: "var(--saffron-pale)" }}
+              className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+              style={{
+                background: shop.image_url
+                  ? "transparent"
+                  : "var(--saffron-pale)",
+              }}
             >
-              <Store
-                className="w-6 h-6 sm:w-7 sm:h-7"
-                style={{ color: "var(--saffron)" }}
-              />
+              {shop.image_url ? (
+                <img
+                  src={`${process.env.NEXT_PUBLIC_API_URL}${shop.image_url}`}
+                  alt={shop.name}
+                  className="w-full h-full object-cover rounded-2xl"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+
+                    if (e.currentTarget.parentElement) {
+                      e.currentTarget.parentElement.style.background =
+                        "var(--saffron-pale)";
+                    }
+                  }}
+                />
+              ) : (
+                <Store
+                  className="w-6 h-6 sm:w-7 sm:h-7"
+                  style={{ color: "var(--saffron)" }}
+                />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <h1
@@ -252,9 +286,11 @@ const ShopView = () => {
                 <p className="text-sm text-slate-500">{shop.address}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <span className="badge badge-blue capitalize">
+                <span className="badge badge-blue">
                   {shop.type
-                    ? shop.type.charAt(0).toUpperCase() + shop.type.slice(1)
+                    ? isHindi
+                      ? (SHOP_TYPE_LABELS[shop.type]?.hi ?? shop.type)
+                      : (SHOP_TYPE_LABELS[shop.type]?.en ?? shop.type)
                     : ""}
                 </span>
                 <span
@@ -513,4 +549,3 @@ const ShopView = () => {
 };
 
 export default ShopView;
-
