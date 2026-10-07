@@ -40,10 +40,11 @@ const SettingsPage = () => {
   const [saving, setSaving] = useState(false);
 
   const [formData, setFormData] = useState({
-    name: "",
-    type: "",
-    address: "",
-  });
+  name: "",
+  type: "",
+  address: "",
+  serviceType: "takeout" as "takeout" | "delivery",
+});
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -88,6 +89,7 @@ const SettingsPage = () => {
           name: userShop.name ?? "",
           type: userShop.type ?? "",
           address: userShop.address ?? "",
+          serviceType: userShop.service_type ?? "takeout",
         });
 
         if (userShop.image_url) {
@@ -150,6 +152,7 @@ const SettingsPage = () => {
       body.append("name", formData.name);
       body.append("type", formData.type);
       body.append("address", formData.address);
+      body.append("serviceType", formData.serviceType);
 
       if (imageFile) {
         body.append("image", imageFile);

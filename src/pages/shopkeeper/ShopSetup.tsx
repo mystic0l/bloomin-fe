@@ -74,6 +74,7 @@ const ShopSetup = () => {
     body.append("name", formData.name);
     body.append("type", formData.type);
     body.append("address", formData.address);
+    
 
     if (imageFile) body.append("image", imageFile);
 

@@ -20,7 +20,7 @@ const upload = multer({
 // CREATE SHOP (supports optional image upload)
 router.post("/", upload.single("image"), async (req, res) => {
   try {
-    const { name, type, address } = req.body;
+    const { name, type, address, serviceType } = req.body;
     const owner_id = req.user.uid;
 
     let imageKey = null;
@@ -33,8 +33,8 @@ router.post("/", upload.single("image"), async (req, res) => {
     console.log("BODY:", req.body);
 
     const result = await pool.query(
-      "INSERT INTO shops (name, type, address, owner_id, image_url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [name, type, address, owner_id, imageKey]
+      "INSERT INTO shops (name, type, address, service_type, owner_id, image_url) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [name, type, address, serviceType, owner_id, imageKey]
     );
 
     res.json(result.rows[0]);
@@ -47,8 +47,8 @@ router.post("/", upload.single("image"), async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, type, address, image_url
-       FROM shops`
+      `SELECT id, name, type, address, service_type, image_url
+   FROM shops`
     );
 
     const shops = await Promise.all(
@@ -69,7 +69,7 @@ router.get("/", async (req, res) => {
 router.get("/my-shop", async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, name, type, address, image_url
+      `SELECT id, name, type, address, service_type, image_url
        FROM shops
        WHERE owner_id = $1`,
       [req.user.uid]
@@ -94,7 +94,7 @@ router.get("/my-shop", async (req, res) => {
 router.put("/:id", upload.single("image"), async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, type, address } = req.body;
+    const { name, type, address, serviceType } = req.body;
 
     // Check that the authenticated user owns this shop
     const shopResult = await pool.query(
@@ -128,15 +128,17 @@ router.put("/:id", upload.single("image"), async (req, res) => {
     const result = await pool.query(
       `UPDATE shops
        SET name = $1,
-           type = $2,
-           address = $3,
-           image_url = $4
-       WHERE id = $5
+    type = $2,
+    address = $3,
+    service_type = $4,
+    image_url = $5
+       WHERE id = $6
        RETURNING *`,
       [
         name,
         type,
         address,
+        serviceType,
         imageKey,
         Number(id),
       ]
