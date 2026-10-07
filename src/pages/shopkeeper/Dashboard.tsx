@@ -82,11 +82,14 @@ const Dashboard = () => {
       try {
         const idToken = await getIdToken(user);
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/shops`, {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
           },
-        });
+        );
 
         const data = await res.json();
 
@@ -103,7 +106,7 @@ const Dashboard = () => {
           });
 
           if (found.image_url) {
-           setLiveShopImageUrl(found.image_url);
+            setLiveShopImageUrl(found.image_url);
           } else {
             setLiveShopImageUrl(null);
           }
@@ -280,9 +283,13 @@ const Dashboard = () => {
                   src={shopImageUrl}
                   alt={currentShop.name}
                   className="w-full h-full object-cover rounded-2xl"
+                  onLoad={(e) => {
+                    e.currentTarget.style.display = "block";
+                  }}
                   onError={(e) => {
                     const target = e.currentTarget;
                     target.style.display = "none";
+
                     if (target.parentElement) {
                       target.parentElement.style.background =
                         "var(--saffron-pale)";
@@ -718,4 +725,3 @@ const OrdersTab = ({
 };
 
 export default Dashboard;
-
