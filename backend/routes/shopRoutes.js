@@ -44,7 +44,6 @@ router.post("/", upload.single("image"), async (req, res) => {
 });
 
 // GET ALL SHOPS
-// GET ALL SHOPS
 router.get("/", async (req, res) => {
   try {
     const result = await pool.query(
@@ -62,6 +61,31 @@ router.get("/", async (req, res) => {
     res.json(shops);
   } catch (err) {
     console.error("GET SHOPS ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET CURRENT USER'S SHOP
+router.get("/my-shop", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, type, address, image_url
+       FROM shops
+       WHERE owner_id = $1`,
+      [req.user.uid]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Shop not found" });
+    }
+
+    const shop = result.rows[0];
+
+    shop.image_url = await getImageUrl(shop.image_url);
+
+    res.json(shop);
+  } catch (err) {
+    console.error("GET MY SHOP ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });

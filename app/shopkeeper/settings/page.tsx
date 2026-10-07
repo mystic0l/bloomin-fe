@@ -60,7 +60,7 @@ const SettingsPage = () => {
         const idToken = await getIdToken(user);
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/shops/my-shop`,
           {
             headers: {
               Authorization: `Bearer ${idToken}`,
@@ -71,18 +71,16 @@ const SettingsPage = () => {
         const data = await res.json();
 
         if (!res.ok) {
-          console.error("Failed to fetch shops:", data);
+          if (res.status === 404) {
+            router.push("/shopkeeper/setup");
+            return;
+          }
+
+          console.error("Failed to fetch shop:", data);
           return;
         }
 
-        const userShop = Array.isArray(data)
-          ? data.find((s: any) => s.owner_id === user.uid)
-          : null;
-
-        if (!userShop) {
-          router.push("/shopkeeper/setup");
-          return;
-        }
+        const userShop = data;
 
         setShop(userShop);
 
