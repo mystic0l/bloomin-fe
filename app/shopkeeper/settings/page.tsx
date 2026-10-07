@@ -93,9 +93,7 @@ const SettingsPage = () => {
         });
 
         if (userShop.image_url) {
-          setImagePreview(
-            `${process.env.NEXT_PUBLIC_API_URL}${userShop.image_url}`,
-          );
+          setImagePreview(userShop.image_url);
         }
       } catch (err) {
         console.error("Failed to load shop:", err);

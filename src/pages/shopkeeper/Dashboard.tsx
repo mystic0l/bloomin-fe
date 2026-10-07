@@ -103,7 +103,7 @@ const Dashboard = () => {
           });
 
           if (found.image_url) {
-            setLiveShopImageUrl(`${process.env.NEXT_PUBLIC_API_URL}${found.image_url}`);
+           setLiveShopImageUrl(found.image_url);
           } else {
             setLiveShopImageUrl(null);
           }

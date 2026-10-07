@@ -255,7 +255,7 @@ const ShopView = () => {
             >
               {shop.image_url ? (
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}${shop.image_url}`}
+                  src={shop.image_url}
                   alt={shop.name}
                   className="w-full h-full object-cover rounded-2xl"
                   onError={(e) => {

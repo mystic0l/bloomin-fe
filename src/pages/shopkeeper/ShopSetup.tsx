@@ -91,9 +91,7 @@ const ShopSetup = () => {
       return;
     }
 
-    const imageUrl = createdShop.image_url
-      ? `${process.env.NEXT_PUBLIC_API_URL}${createdShop.image_url}`
-      : undefined;
+    const imageUrl = createdShop.image_url || undefined;
 
     addShop({
       id: String(createdShop.id),

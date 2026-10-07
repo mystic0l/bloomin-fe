@@ -44,9 +44,13 @@ router.post("/", upload.single("image"), async (req, res) => {
 });
 
 // GET ALL SHOPS
+// GET ALL SHOPS
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM shops");
+    const result = await pool.query(
+      `SELECT id, name, type, address, image_url
+       FROM shops`
+    );
 
     const shops = await Promise.all(
       result.rows.map(async (shop) => ({
@@ -57,6 +61,7 @@ router.get("/", async (req, res) => {
 
     res.json(shops);
   } catch (err) {
+    console.error("GET SHOPS ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
