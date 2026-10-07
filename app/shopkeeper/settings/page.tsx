@@ -351,6 +351,33 @@ const SettingsPage = () => {
             />
           </div>
 
+          {/* Service type */}
+          <div>
+            <div className="grid grid-cols-2 gap-3">
+              {(["takeout", "delivery"] as const).map((sType) => (
+                <button
+                  key={sType}
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, serviceType: sType })
+                  }
+                  className="py-3 px-4 rounded-xl font-semibold text-sm transition-all"
+                  style={
+                    formData.serviceType === sType
+                      ? {
+                          background: "var(--saffron)",
+                          color: "white",
+                          boxShadow: "0 2px 8px rgba(255,107,53,0.3)",
+                        }
+                      : { background: "#F1F5F9", color: "var(--slate-mid)" }
+                  }
+                >
+                  {sType === "takeout" ? t("shop.takeout") : t("shop.delivery")}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <button
             type="submit"
             disabled={saving}
