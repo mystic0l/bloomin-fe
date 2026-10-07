@@ -2,25 +2,14 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../config/db");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, "../uploads");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, "shop-" + uniqueSuffix + path.extname(file.originalname));
-  },
-});
+const {
+  uploadImage,
+  getImageUrl,
+  deleteImage,
+} = require("../config/storage");
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith("image/")) cb(null, true);
@@ -34,16 +23,18 @@ router.post("/", upload.single("image"), async (req, res) => {
     const { name, type, address } = req.body;
     const owner_id = req.user.uid;
 
-    let imageUrl = null;
+    let imageKey = null;
+
     if (req.file) {
-      // Build a publicly accessible URL for the uploaded file
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageKey = `shops/${req.user.uid}/${Date.now()}-${req.file.originalname}`;
+
+      await uploadImage(req.file, imageKey);
     }
     console.log("BODY:", req.body);
 
     const result = await pool.query(
       "INSERT INTO shops (name, type, address, owner_id, image_url) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [name, type, address, owner_id, imageUrl]
+      [name, type, address, owner_id, imageKey]
     );
 
     res.json(result.rows[0]);
@@ -56,7 +47,15 @@ router.post("/", upload.single("image"), async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM shops");
-    res.json(result.rows);
+
+    const shops = await Promise.all(
+      result.rows.map(async (shop) => ({
+        ...shop,
+        image_url: await getImageUrl(shop.image_url),
+      }))
+    );
+
+    res.json(shops);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -85,10 +84,16 @@ router.put("/:id", upload.single("image"), async (req, res) => {
 
     const existingShop = shopResult.rows[0];
 
-    let imageUrl = existingShop.image_url;
+    let imageKey = existingShop.image_url;
 
     if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+      imageKey = `shops/${req.user.uid}/${Date.now()}-${req.file.originalname}`;
+
+      await uploadImage(req.file, imageKey);
+
+      if (existingShop.image_url) {
+        await deleteImage(existingShop.image_url);
+      }
     }
 
     const result = await pool.query(
@@ -103,7 +108,7 @@ router.put("/:id", upload.single("image"), async (req, res) => {
         name,
         type,
         address,
-        imageUrl,
+        imageKey,
         Number(id),
       ]
     );
