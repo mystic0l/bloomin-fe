@@ -71,7 +71,7 @@ Customers can browse available shops and discover local businesses through the p
 
 **Screenshot:**
 
-<img width="1458" height="736" alt="customerstore" src="https://github.com/user-attachments/assets/aa0b0f09-522a-4838-ae69-95ec0d13e227" />
+<img width="1458" height="726" alt="storefrontcustomer" src="https://github.com/user-attachments/assets/9a5b8551-35bb-43b6-86a0-2790e1418873" />
 
 
 ---
