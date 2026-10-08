@@ -71,7 +71,7 @@ Customers can browse available shops and discover local businesses through the p
 
 **Screenshot:**
 
-<img width="1600" height="736" alt="customerstorefront" src="https://github.com/user-attachments/assets/6ea36669-6910-4d35-9ed3-3300112d0e3b" />
+<img width="1458" height="736" alt="customerstore" src="https://github.com/user-attachments/assets/aa0b0f09-522a-4838-ae69-95ec0d13e227" />
 
 
 ---
@@ -82,7 +82,7 @@ Customers can select products and review their cart before placing an order.
 
 **Screenshot:**
 
-<img width="1600" height="765" alt="customer" src="https://github.com/user-attachments/assets/a13e9a4f-f054-46b8-b13c-dbe1bdd250fb" />
+<img width="1512" height="734" alt="checkout" src="https://github.com/user-attachments/assets/fb81c8f9-520d-43d0-a13c-cc8c247f560f" />
 
 
 ---
