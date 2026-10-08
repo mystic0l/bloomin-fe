@@ -29,50 +29,89 @@ const ShopList = () => {
   const router = useRouter();
   const { t } = useTranslation();
   const [shops, setShops] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
 
   useEffect(() => {
-    let cancelled = false;
+  let cancelled = false;
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        console.error("No authenticated Firebase user");
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      console.error("No authenticated Firebase user");
+      return;
+    }
+
+    try {
+      const idToken = await getIdToken(user);
+
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
+        {
+          headers: {
+            Authorization: `Bearer ${idToken}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Failed to fetch shops:", data);
         return;
       }
 
-      try {
-        const idToken = await getIdToken(user);
+      const shopData = Array.isArray(data) ? data : [];
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/shops`,
-          {
-            headers: {
-              Authorization: `Bearer ${idToken}`,
-            },
-          },
-        );
+      if (cancelled) return;
 
-        const data = await res.json();
+      setShops(shopData);
 
-        if (!res.ok) {
-          console.error("Failed to fetch shops:", data);
-          return;
-        }
+      const productResults = await Promise.all(
+        shopData.map(async (shop) => {
+          try {
+            const productRes = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/products/${shop.id}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${idToken}`,
+                },
+              },
+            );
 
-        if (cancelled) return;
+            const productData = await productRes.json();
 
-        setShops(Array.isArray(data) ? data : []);
-      } catch (err) {
-        console.error("Error fetching shops:", err);
-      }
-    });
+            if (!productRes.ok || !Array.isArray(productData)) {
+              return [];
+            }
 
-    return () => {
-      cancelled = true;
-      unsubscribe();
-    };
-  }, []);
+            return productData.map((product: any) => ({
+              ...product,
+              shop_id: shop.id,
+            }));
+          } catch (err) {
+            console.error(
+              `Error fetching products for shop ${shop.id}:`,
+              err,
+            );
+            return [];
+          }
+        }),
+      );
+
+      if (cancelled) return;
+
+      setProducts(productResults.flat());
+    } catch (err) {
+      console.error("Error fetching shops:", err);
+    }
+  });
+
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
+}, []);
 
   const isHindi = t("common.language") === "hindi";
   const activeShops = shops;
@@ -82,13 +121,21 @@ const ShopList = () => {
   ];
 
   const filteredShops = activeShops.filter((shop) => {
-    const matchesSearch =
-      shop.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      shop.address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = selectedType === "all" || shop.type === selectedType;
-    return matchesSearch && matchesType;
-  });
+  const query = searchQuery.trim().toLowerCase();
+
+  const matchesSearch =
+    query === "" ||
+    products.some(
+      (product) =>
+        String(product.shop_id) === String(shop.id) &&
+        String(product.name ?? "").toLowerCase().includes(query),
+    );
+
+  const matchesType =
+    selectedType === "all" || shop.type === selectedType;
+
+  return matchesSearch && matchesType;
+});
 
   return (
     <div className="space-y-5 sm:space-y-6 pb-8">
